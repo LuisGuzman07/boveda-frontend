@@ -4,155 +4,104 @@ import { checkBackendHealth, checkDatabaseHealth } from '../services/healthServi
 import { useAuth } from '../context/AuthContext';
 
 export default function HomePage() {
-  const [backendStatus, setBackendStatus] = useState({ loading: true, ok: false, data: null, error: null });
-  const [dbStatus, setDbStatus] = useState({ loading: true, ok: false, data: null, error: null });
+  const [systemStatus, setSystemStatus] = useState({ backend: false, db: false, loading: true });
   const { isAuthenticated, user } = useAuth();
 
-  const fetchStatus = async () => {
-    setBackendStatus({ loading: true, ok: false, data: null, error: null });
-    setDbStatus({ loading: true, ok: false, data: null, error: null });
-
-    // Check FastAPI Backend
-    try {
-      const data = await checkBackendHealth();
-      setBackendStatus({ loading: false, ok: true, data, error: null });
-    } catch (err) {
-      setBackendStatus({
-        loading: false,
-        ok: false,
-        data: null,
-        error: err.message || 'No se pudo conectar con el backend',
-      });
-    }
-
-    // Check PostgreSQL Database
-    try {
-      const dbData = await checkDatabaseHealth();
-      setDbStatus({ loading: false, ok: true, data: dbData, error: null });
-    } catch (err) {
-      setDbStatus({
-        loading: false,
-        ok: false,
-        data: null,
-        error: err.response?.data?.detail?.message || err.message || 'Error al conectar con la base de datos',
-      });
-    }
-  };
-
   useEffect(() => {
-    fetchStatus();
+    const checkStatus = async () => {
+      try {
+        const [backendRes, dbRes] = await Promise.all([
+          checkBackendHealth().catch(() => ({ status: 'error' })),
+          checkDatabaseHealth().catch(() => ({ status: 'error' })),
+        ]);
+        setSystemStatus({
+          backend: backendRes.status === 'ok',
+          db: dbRes.status === 'ok' && dbRes.database === 'connected',
+          loading: false,
+        });
+      } catch {
+        setSystemStatus({ backend: false, db: false, loading: false });
+      }
+    };
+    checkStatus();
   }, []);
+
+  const isSystemReady = systemStatus.backend && systemStatus.db;
 
   return (
     <div className="container">
       {/* Hero Section */}
-      <header className="hero-section">
-        <div className="header-badge">
-          <span>🛡️ Bóveda Híbrida</span> • <span>Seguridad Criptográfica</span>
+      <section className="hero-section">
+        <div className="hero-badge">
+          <span className="badge-dot"></span>
+          <span>Plataforma de Seguridad Criptográfica</span>
         </div>
-        <h1>Bóveda Híbrida de Archivos Cifrados</h1>
-        <p>
-          Plataforma de alta seguridad para equipos académicos y pequeñas organizaciones.
-          Control de acceso basado en roles (RBAC), tokens JWT, cifrado y trazabilidad inmutable.
+        <h1 className="hero-title">
+          Bóveda Híbrida de Archivos Cifrados
+        </h1>
+        <p className="hero-subtitle">
+          Almacena, cifra y colabora en archivos confidenciales con control de acceso
+          granular, autenticación segura y trazabilidad inmutable.
         </p>
 
         <div className="hero-cta-group">
           {isAuthenticated ? (
             <Link to="/dashboard" className="btn btn-primary btn-lg">
-              🚀 Ir al Panel de Control ({user?.nombre})
+              Ir al Panel de Control
             </Link>
           ) : (
             <>
               <Link to="/login" className="btn btn-primary btn-lg">
-                🔐 Iniciar Sesión
+                Iniciar Sesión
               </Link>
               <Link to="/register" className="btn btn-secondary btn-lg">
-                ✨ Registrarse (CU-01)
+                Crear Cuenta
               </Link>
             </>
           )}
         </div>
-      </header>
+      </section>
 
-      {/* Tarjetas de Casos de Uso Implementados */}
-      <div className="features-grid">
+      {/* Características Principales */}
+      <section className="features-grid">
         <div className="feature-card">
-          <div className="feature-icon">👤</div>
-          <h3>CU-01: Registro de Usuario</h3>
+          <div className="feature-icon-wrapper">🔐</div>
+          <h3>Cifrado y Seguridad</h3>
           <p>
-            Creación segura de cuentas con validación de complejidad de contraseña, hash Bcrypt y
-            asignación automática del rol <strong>Miembro</strong>.
+            Protección de archivos mediante algoritmos criptográficos robustos y almacenamiento seguro.
           </p>
         </div>
 
         <div className="feature-card">
-          <div className="feature-icon">🔑</div>
-          <h3>Inicio de Sesión (JWT + Sesiones)</h3>
+          <div className="feature-icon-wrapper">🛡️</div>
+          <h3>Control de Acceso (RBAC)</h3>
           <p>
-            Autenticación con Access Tokens y Refresh Tokens, control de intentos fallidos,
-            bloqueo de fuerza bruta y registro de dispositivos.
+            Permisos basados en roles con separación estricta de privilegios para administradores, investigadores y auditores.
           </p>
         </div>
 
         <div className="feature-card">
-          <div className="feature-icon">🛡️</div>
-          <h3>CU-16: RBAC (Roles y Permisos)</h3>
+          <div className="feature-icon-wrapper">📋</div>
+          <h3>Trazabilidad e Integridad</h3>
           <p>
-            Gestión granular de accesos con roles (Administrador, Miembro, Auditor, Invitado) y
-            catálogo de permisos por módulo.
+            Bitácora inmutable de eventos para garantizar la auditoría continua de accesos y operaciones.
           </p>
         </div>
-      </div>
+      </section>
 
-      {/* Monitor de Estado de Servicios */}
-      <div className="card">
-        <div className="card-header">
-          <h2 style={{ fontSize: '1.2rem', fontWeight: '600' }}>
-            📡 Estado del Backend & Base de Datos en Vivo
-          </h2>
-          <button className="btn-refresh-sm" onClick={fetchStatus}>
-            🔄 Actualizar
-          </button>
+      {/* Barra de Estado del Sistema (Discreta y Limpia) */}
+      <footer className="system-status-bar">
+        <div className="status-indicator-group">
+          <span className={`status-dot ${isSystemReady ? 'online' : 'offline'}`}></span>
+          <span className="status-text">
+            {systemStatus.loading
+              ? 'Verificando servicios...'
+              : isSystemReady
+              ? 'Servicios Operativos • API & Base de Datos Conectadas'
+              : 'Verificando conexión con el servidor'}
+          </span>
         </div>
-
-        <div className="status-section">
-          {/* Backend Card */}
-          <div className={`status-card ${backendStatus.loading ? 'loading' : backendStatus.ok ? 'success' : 'error'}`}>
-            <div className="status-info">
-              <h3>FastAPI Backend (Docker :8000)</h3>
-              <p>
-                {backendStatus.loading
-                  ? 'Comprobando conexión...'
-                  : backendStatus.ok
-                  ? 'FastAPI respondiendo correctamente'
-                  : 'No se pudo conectar con el backend'}
-              </p>
-            </div>
-            <div className="status-indicator">
-              <span className="indicator-dot"></span>
-              <span>{backendStatus.loading ? 'Cargando' : backendStatus.ok ? 'Online' : 'Error'}</span>
-            </div>
-          </div>
-
-          {/* Database Card */}
-          <div className={`status-card ${dbStatus.loading ? 'loading' : dbStatus.ok ? 'success' : 'error'}`}>
-            <div className="status-info">
-              <h3>PostgreSQL DB (Docker :5432)</h3>
-              <p>
-                {dbStatus.loading
-                  ? 'Comprobando base de datos...'
-                  : dbStatus.ok
-                  ? 'Base de datos conectada (SELECT 1 OK)'
-                  : 'Sin conexión a la base de datos'}
-              </p>
-            </div>
-            <div className="status-indicator">
-              <span className="indicator-dot"></span>
-              <span>{dbStatus.loading ? 'Cargando' : dbStatus.ok ? 'Conectado' : 'Error'}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      </footer>
     </div>
   );
 }

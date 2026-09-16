@@ -1,136 +1,184 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { getMfaStatus } from '../services/authService';
+import MfaModal from '../components/MfaModal';
 
 export default function DashboardPage() {
   const { user, roles, permissions } = useAuth();
+  const [mfaStatus, setMfaStatus] = useState({ mfa_enabled: false, tipo: null });
+  const [mfaModalOpen, setMfaModalOpen] = useState(false);
+  const [loadingMfa, setLoadingMfa] = useState(true);
+
+  const fetchMfaStatus = async () => {
+    try {
+      setLoadingMfa(true);
+      const data = await getMfaStatus();
+      setMfaStatus(data);
+    } catch (err) {
+      console.error('Error al obtener estado MFA:', err);
+    } finally {
+      setLoadingMfa(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMfaStatus();
+  }, []);
+
+  const isMfaActive = Boolean(mfaStatus?.enabled || mfaStatus?.mfa_enabled);
 
   return (
-    <div className="container dashboard">
+    <div className="container">
       {/* Header del Dashboard */}
-      <header className="dashboard-header">
-        <div className="user-welcome">
-          <div className="user-avatar-large">
+      <header className="dashboard-hero">
+        <div className="profile-summary">
+          <div className="profile-avatar">
             {user?.nombre ? user.nombre.charAt(0).toUpperCase() : 'U'}
           </div>
-          <div>
-            <div className="welcome-tag">Sesión Activa Autenticada (JWT)</div>
-            <h1>Bienvenido, {user?.nombre}</h1>
-            <p className="user-email">{user?.correo}</p>
-          </div>
-        </div>
-
-        <div className="user-status-pill">
-          <span className="dot active"></span>
-          <span>Estado: {user?.estado || 'ACTIVO'}</span>
-        </div>
-      </header>
-
-      {/* Grid Principal */}
-      <div className="dashboard-grid">
-        {/* Tarjeta 1: Información de Usuario & Dispositivo */}
-        <div className="card">
-          <div className="card-header">
-            <h3>👤 Perfil de Usuario</h3>
-            <span className="badge-blue">ID Único</span>
-          </div>
-          <div className="info-list">
-            <div className="info-item">
-              <span className="info-label">Identificador (UUID):</span>
-              <span className="info-value monospace">{user?.id_usuario}</span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">Correo Verificado:</span>
-              <span className="info-value">
-                {user?.correo_verificado ? '✅ Verificado' : '⏳ Pendiente de verificación'}
-              </span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">Fecha de Registro:</span>
-              <span className="info-value">
-                {user?.fecha_creacion ? new Date(user.fecha_creacion).toLocaleString() : 'N/A'}
-              </span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">Último Acceso Registrado:</span>
-              <span className="info-value">
-                {user?.ultimo_acceso ? new Date(user.ultimo_acceso).toLocaleString() : 'Sesión Actual'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Tarjeta 2: Control de Acceso Basado en Roles (CU-16 RBAC) */}
-        <div className="card">
-          <div className="card-header">
-            <h3>🛡️ Roles y Permisos (CU-16 RBAC)</h3>
-            <span className="badge-purple">Seguridad</span>
-          </div>
-
-          <div className="roles-section">
-            <p className="sub-title">Roles Asignados:</p>
-            <div className="roles-badge-container">
-              {roles.length > 0 ? (
-                roles.map((rol, idx) => (
-                  <span key={idx} className="role-chip">
-                    👑 {rol}
-                  </span>
-                ))
-              ) : (
-                <span className="text-muted">Sin rol asignado</span>
-              )}
-            </div>
-          </div>
-
-          <div className="permissions-section">
-            <p className="sub-title">Permisos Efectivos ({permissions.length}):</p>
-            <div className="permissions-grid">
-              {permissions.map((perm, idx) => (
-                <span key={idx} className="permission-chip">
-                  ✓ {perm}
+          <div className="profile-details">
+            <div className="profile-badge-row">
+              <span className="account-status-badge">Cuenta Activa</span>
+              {roles.map((rol, i) => (
+                <span key={i} className="role-badge">
+                  {rol}
                 </span>
               ))}
             </div>
+            <h2>{user?.nombre}</h2>
+            <p className="profile-email">{user?.correo}</p>
+          </div>
+        </div>
+      </header>
+
+      {/* Grid de Resumen */}
+      <div className="dashboard-grid">
+        {/* Tarjeta: Información de Cuenta */}
+        <div className="panel-card">
+          <div className="panel-card-header">
+            <h3>Perfil de Usuario</h3>
+          </div>
+          <div className="panel-list">
+            <div className="panel-row">
+              <span className="row-label">Estado de Cuenta</span>
+              <span className="row-value badge-success-text">Activo</span>
+            </div>
+            <div className="panel-row">
+              <span className="row-label">Verificación de Correo</span>
+              <span className="row-value">
+                {user?.correo_verificado ? 'Verificado' : 'No verificado'}
+              </span>
+            </div>
+            <div className="panel-row">
+              <span className="row-label">Fecha de Registro</span>
+              <span className="row-value">
+                {user?.fecha_creacion
+                  ? new Date(user.fecha_creacion).toLocaleDateString()
+                  : '—'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Tarjeta: Seguridad & 2FA */}
+        <div className="panel-card">
+          <div className="panel-card-header">
+            <h3>Seguridad de la Cuenta</h3>
+            <span
+              className={`chip-count ${
+                isMfaActive ? 'chip-success' : 'chip-warning'
+              }`}
+            >
+              {isMfaActive ? '2FA Activo' : '2FA Inactivo'}
+            </span>
+          </div>
+          <div className="panel-list">
+            <div className="panel-row">
+              <span className="row-label">Doble Factor (TOTP)</span>
+              <span className="row-value">
+                {loadingMfa
+                  ? 'Consultando...'
+                  : isMfaActive
+                  ? 'Habilitado (Bóveda Authenticator)'
+                  : 'Sin configurar'}
+              </span>
+            </div>
+            <div className="panel-row">
+              <span className="row-label">Protección de Sesión</span>
+              <span className="row-value badge-success-text">Alta (JWT + Refresh)</span>
+            </div>
+          </div>
+          <div style={{ marginTop: '1.25rem' }}>
+            <button
+              type="button"
+              className={`btn btn-block ${
+                isMfaActive ? 'btn-secondary' : 'btn-primary'
+              }`}
+              onClick={() => setMfaModalOpen(true)}
+            >
+              {isMfaActive ? '⚙️ Desactivar 2FA' : '🔒 Configurar 2FA con App Móvil'}
+            </button>
+          </div>
+        </div>
+
+        {/* Tarjeta: Privilegios y Permisos */}
+        <div className="panel-card" style={{ gridColumn: '1 / -1' }}>
+          <div className="panel-card-header">
+            <h3>Privilegios Asignados</h3>
+            <span className="chip-count">{permissions.length} permisos</span>
+          </div>
+          <p className="panel-hint">
+            Permisos habilitados según tu rol actual ({roles.join(', ') || 'Miembro'}):
+          </p>
+          <div className="permissions-flow">
+            {permissions.map((perm, idx) => (
+              <span key={idx} className="permission-tag">
+                {perm}
+              </span>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Tarjeta 3: Módulos del Sistema */}
-      <div className="card modules-card">
-        <h3>📂 Módulos de Bóveda Híbrida Disponibles</h3>
-        <p className="modules-desc">
-          Acceso controlado según tu rol actual ({roles.join(', ') || 'Miembro'}).
-        </p>
+      {/* Módulos Principales */}
+      <section className="modules-section">
+        <div className="section-title-row">
+          <h3>Módulos de la Bóveda</h3>
+        </div>
 
-        <div className="modules-grid">
-          <div className="module-item">
-            <div className="module-icon">🗄️</div>
-            <h4>Bóvedas Cifradas</h4>
-            <p>Creación y gestión de repositorios seguros de almacenamiento.</p>
-            <span className="status-badge available">Disponible</span>
+        <div className="modules-deck">
+          <div className="deck-card">
+            <div className="deck-icon">🗄️</div>
+            <h4>Bóvedas</h4>
+            <p>Repositorios cifrados para almacenar archivos confidenciales.</p>
           </div>
 
-          <div className="module-item">
-            <div className="module-icon">🔐</div>
-            <h4>Gestión de Archivos</h4>
-            <p>Carga, cifrado híbrido, descarga y versionado de archivos.</p>
-            <span className="status-badge available">Disponible</span>
+          <div className="deck-card">
+            <div className="deck-icon">📁</div>
+            <h4>Archivos</h4>
+            <p>Carga, versionado y control de acceso de documentos.</p>
           </div>
 
-          <div className="module-item">
-            <div className="module-icon">📋</div>
-            <h4>Bitácora de Auditoría</h4>
-            <p>Trazabilidad inmutable de accesos, intentos y transacciones.</p>
-            <span className="status-badge ready">Próximo CU</span>
+          <div className="deck-card">
+            <div className="deck-icon">🔐</div>
+            <h4>Seguridad</h4>
+            <p>Gestión de claves, dispositivos vinculados y políticas.</p>
           </div>
 
-          <div className="module-item">
-            <div className="module-icon">📱</div>
-            <h4>MFA (Doble Factor)</h4>
-            <p>Protección con TOTP Authenticator y dispositivos de confianza.</p>
-            <span className="status-badge ready">Próximo CU</span>
+          <div className="deck-card">
+            <div className="deck-icon">📜</div>
+            <h4>Auditoría</h4>
+            <p>Registro continuo e inmutable de eventos de seguridad.</p>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Modal de Configuración MFA */}
+      <MfaModal
+        isOpen={mfaModalOpen}
+        onClose={() => setMfaModalOpen(false)}
+        isMfaEnabled={isMfaActive}
+        onSuccess={fetchMfaStatus}
+      />
     </div>
   );
 }

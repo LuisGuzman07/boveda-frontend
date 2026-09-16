@@ -13,7 +13,7 @@ export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  // Validaciones en tiempo real de contraseña
+  // Validaciones de seguridad de contraseña
   const hasMinLength = password.length >= 8;
   const hasUpper = /[A-Z]/.test(password);
   const hasLower = /[a-z]/.test(password);
@@ -27,12 +27,12 @@ export default function RegisterPage() {
     setError(null);
 
     if (!isPasswordValid) {
-      setError('Por favor cumpla con todos los requisitos de seguridad de la contraseña.');
+      setError('La contraseña debe tener al menos 8 caracteres, mayúsculas, minúsculas, números y un símbolo.');
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Las contraseñas ingresadas no coinciden.');
+      setError('Las contraseñas no coinciden.');
       return;
     }
 
@@ -45,7 +45,7 @@ export default function RegisterPage() {
       const msg =
         err.response?.data?.detail ||
         err.message ||
-        'Error al registrar el usuario. Verifique los datos.';
+        'Error al crear la cuenta.';
       setError(msg);
     } finally {
       setLoading(false);
@@ -53,103 +53,97 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card register">
+    <div className="auth-wrapper">
+      <div className="auth-card register-card">
         <div className="auth-header">
-          <div className="auth-icon-badge">✨</div>
-          <h2>Crear Cuenta (CU-01)</h2>
-          <p>Únete a la plataforma con rol asignado automáticamente (RBAC)</p>
+          <div className="auth-brand-icon">✨</div>
+          <h2>Crear Cuenta</h2>
+          <p>Registra un nuevo usuario para acceder a la plataforma</p>
         </div>
 
         {error && (
-          <div className="alert-box error">
+          <div className="alert-banner error">
             <span>⚠️</span>
             <p>{error}</p>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
+          <div className="form-field">
             <label htmlFor="nombre">Nombre Completo</label>
             <input
               id="nombre"
               type="text"
-              placeholder="Dr. Juan Pérez"
+              placeholder="Ej. Juan Pérez"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               required
               disabled={loading}
-              className="form-input"
+              className="input-control"
             />
           </div>
 
-          <div className="form-group">
+          <div className="form-field">
             <label htmlFor="correo">Correo Electrónico</label>
             <input
               id="correo"
               type="email"
-              placeholder="juan.perez@boveda.com"
+              placeholder="juan.perez@organizacion.com"
               value={correo}
               onChange={(e) => setCorreo(e.target.value)}
               required
               disabled={loading}
-              className="form-input"
+              className="input-control"
             />
           </div>
 
-          <div className="form-group">
+          <div className="form-field">
             <label htmlFor="password">Contraseña</label>
             <input
               id="password"
               type="password"
-              placeholder="Ingresa tu contraseña segura"
+              placeholder="Mínimo 8 caracteres"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loading}
-              className="form-input"
+              className="input-control"
             />
           </div>
 
-          {/* Checklist de requisitos de contraseña */}
-          <div className="password-checklist">
-            <p className="checklist-title">Requisitos de Contraseña (Seguridad):</p>
-            <ul>
-              <li className={hasMinLength ? 'valid' : 'invalid'}>
-                {hasMinLength ? '✓' : '○'} Mínimo 8 caracteres
-              </li>
-              <li className={hasUpper ? 'valid' : 'invalid'}>
-                {hasUpper ? '✓' : '○'} Al menos una letra mayúscula (A-Z)
-              </li>
-              <li className={hasLower ? 'valid' : 'invalid'}>
-                {hasLower ? '✓' : '○'} Al menos una letra minúscula (a-z)
-              </li>
-              <li className={hasNumber ? 'valid' : 'invalid'}>
-                {hasNumber ? '✓' : '○'} Al menos un número (0-9)
-              </li>
-              <li className={hasSpecial ? 'valid' : 'invalid'}>
-                {hasSpecial ? '✓' : '○'} Al menos un carácter especial (!@#$%^&*...)
-              </li>
-            </ul>
+          {/* Indicadores limpios de fortaleza */}
+          <div className="password-rules-box">
+            <div className="rules-grid">
+              <span className={`rule-item ${hasMinLength ? 'ok' : ''}`}>
+                {hasMinLength ? '✓' : '•'} 8+ caracteres
+              </span>
+              <span className={`rule-item ${hasUpper ? 'ok' : ''}`}>
+                {hasUpper ? '✓' : '•'} Mayúscula
+              </span>
+              <span className={`rule-item ${hasLower ? 'ok' : ''}`}>
+                {hasLower ? '✓' : '•'} Minúscula
+              </span>
+              <span className={`rule-item ${hasNumber ? 'ok' : ''}`}>
+                {hasNumber ? '✓' : '•'} Número
+              </span>
+              <span className={`rule-item ${hasSpecial ? 'ok' : ''}`}>
+                {hasSpecial ? '✓' : '•'} Símbolo (!@#$)
+              </span>
+            </div>
           </div>
 
-          <div className="form-group">
+          <div className="form-field">
             <label htmlFor="confirmPassword">Confirmar Contraseña</label>
             <input
               id="confirmPassword"
               type="password"
-              placeholder="Repite tu contraseña"
+              placeholder="Repite la contraseña"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               disabled={loading}
-              className="form-input"
+              className="input-control"
             />
-            {confirmPassword && (
-              <p className={`match-hint ${passwordsMatch ? 'match' : 'no-match'}`}>
-                {passwordsMatch ? '✓ Las contraseñas coinciden' : '✗ Las contraseñas no coinciden'}
-              </p>
-            )}
           </div>
 
           <button
@@ -157,20 +151,13 @@ export default function RegisterPage() {
             className="btn btn-primary btn-block"
             disabled={loading || !isPasswordValid || !passwordsMatch}
           >
-            {loading ? (
-              <>
-                <span className="spinner-small"></span>
-                Registrando...
-              </>
-            ) : (
-              'Crear Cuenta y Asignar Rol'
-            )}
+            {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
           </button>
         </form>
 
         <div className="auth-footer">
           <p>
-            ¿Ya tienes una cuenta? <Link to="/login">Inicia sesión aquí</Link>
+            ¿Ya tienes una cuenta? <Link to="/login">Inicia sesión</Link>
           </p>
         </div>
       </div>

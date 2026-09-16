@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { loginUser, registerUser, getMe, logoutUser } from '../services/authService';
+import { loginUser, registerUser, verifyLoginMfa, getMe, logoutUser } from '../services/authService';
 
 const AuthContext = createContext(null);
 
@@ -36,18 +36,30 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (correo, password) => {
     const data = await loginUser(correo, password);
+    if (data.mfa_required) {
+      return data; // Requiere segundo paso (código 2FA)
+    }
+    _setAuthData(data);
+    return data;
+  };
+
+  const completeMfaLogin = async (mfaToken, code) => {
+    const data = await verifyLoginMfa(mfaToken, code);
+    _setAuthData(data);
+    return data;
+  };
+
+  const _setAuthData = (data) => {
     localStorage.setItem('access_token', data.access_token);
     localStorage.setItem('refresh_token', data.refresh_token);
     setToken(data.access_token);
     setUser(data.usuario);
     setRoles(data.roles);
     setPermissions(data.permisos);
-    return data;
   };
 
   const register = async (nombre, correo, password) => {
-    const newUser = await registerUser(nombre, correo, password);
-    // Auto-login tras registro
+    await registerUser(nombre, correo, password);
     return await login(correo, password);
   };
 
@@ -70,6 +82,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!user,
         loading,
         login,
+        completeMfaLogin,
         register,
         logout,
       }}

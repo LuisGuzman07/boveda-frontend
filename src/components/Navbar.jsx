@@ -12,42 +12,42 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="navbar">
+    <header className="navbar">
       <div className="nav-container">
-        <Link to="/" className="nav-logo">
-          <span className="logo-icon">🛡️</span>
-          <span className="logo-text">Bóveda Híbrida</span>
+        <Link to="/" className="nav-brand">
+          <span className="brand-icon">🛡️</span>
+          <span className="brand-name">Bóveda Híbrida</span>
         </Link>
 
-        <div className="nav-links">
-          <Link to="/" className="nav-link">
+        <nav className="nav-menu">
+          <Link to="/" className="nav-item">
             Inicio
           </Link>
           {isAuthenticated ? (
             <>
-              <Link to="/dashboard" className="nav-link highlight">
-                Panel de Control
+              <Link to="/dashboard" className="nav-item">
+                Panel
               </Link>
-              <div className="user-nav-badge">
-                <span className="user-name">{user?.nombre}</span>
-                {roles[0] && <span className="role-tag">{roles[0]}</span>}
+              <div className="nav-user-pill">
+                <span className="nav-user-name">{user?.nombre?.split(' ')[0]}</span>
+                {roles[0] && <span className="nav-role-badge">{roles[0]}</span>}
               </div>
-              <button onClick={handleLogout} className="btn-nav-logout">
-                Cerrar Sesión
+              <button onClick={handleLogout} className="btn-logout">
+                Salir
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" className="nav-btn-secondary">
+              <Link to="/login" className="btn-nav-outline">
                 Iniciar Sesión
               </Link>
-              <Link to="/register" className="nav-btn-primary">
-                Registrarse
+              <Link to="/register" className="btn-nav-solid">
+                Crear Cuenta
               </Link>
             </>
           )}
-        </div>
+        </nav>
       </div>
-    </nav>
+    </header>
   );
 }
