@@ -3,8 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
-  const { user, roles, isAuthenticated, logout } = useAuth();
+  const { user, roles, permissions, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+
+  const canViewAudit = roles.includes('Administrador') || permissions.includes('audit:read');
 
   const handleLogout = async () => {
     await logout();
@@ -28,6 +30,11 @@ export default function Navbar() {
               <Link to="/dashboard" className="nav-item">
                 Panel
               </Link>
+              {canViewAudit && (
+                <Link to="/audit" className="nav-item">
+                  Auditoría
+                </Link>
+              )}
               <div className="nav-user-pill">
                 <span className="nav-user-name">{user?.nombre?.split(' ')[0]}</span>
                 {roles[0] && <span className="nav-role-badge">{roles[0]}</span>}

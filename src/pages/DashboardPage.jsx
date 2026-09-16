@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMfaStatus } from '../services/authService';
 import MfaModal from '../components/MfaModal';
@@ -164,11 +165,11 @@ export default function DashboardPage() {
             <p>Gestión de claves, dispositivos vinculados y políticas.</p>
           </div>
 
-          <div className="deck-card">
+          <Link to="/audit" className="deck-card deck-card-clickable" style={{ textDecoration: 'none', color: 'inherit' }}>
             <div className="deck-icon">📜</div>
             <h4>Auditoría</h4>
             <p>Registro continuo e inmutable de eventos de seguridad.</p>
-          </div>
+          </Link>
         </div>
       </section>
 
