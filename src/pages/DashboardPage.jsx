@@ -2,13 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMfaStatus } from '../services/authService';
+import { listDevices, getOrCreateDeviceId } from '../services/deviceService';
 import MfaModal from '../components/MfaModal';
+import TrustedDevicesModal from '../components/TrustedDevicesModal';
 
 export default function DashboardPage() {
   const { user, roles, permissions } = useAuth();
   const [mfaStatus, setMfaStatus] = useState({ mfa_enabled: false, tipo: null });
   const [mfaModalOpen, setMfaModalOpen] = useState(false);
   const [loadingMfa, setLoadingMfa] = useState(true);
+
+  // CU-04: Dispositivos de Confianza
+  const [devicesModalOpen, setDevicesModalOpen] = useState(false);
+  const [devicesCount, setDevicesCount] = useState(0);
+  const [currentDeviceTrusted, setCurrentDeviceTrusted] = useState(false);
+  const [currentDeviceName, setCurrentDeviceName] = useState('Navegador Web');
 
   const fetchMfaStatus = async () => {
     try {
@@ -22,8 +30,26 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchDeviceStatus = async () => {
+    try {
+      const data = await listDevices();
+      setDevicesCount(data.total || 0);
+      const localId = getOrCreateDeviceId();
+      const current = data.dispositivos?.find(
+        (d) => d.identificador_seguro === localId || d.es_dispositivo_actual
+      );
+      if (current) {
+        setCurrentDeviceTrusted(Boolean(current.es_confiable));
+        setCurrentDeviceName(current.nombre || 'Navegador Web');
+      }
+    } catch (err) {
+      console.error('Error al obtener estado de dispositivos:', err);
+    }
+  };
+
   useEffect(() => {
     fetchMfaStatus();
+    fetchDeviceStatus();
   }, []);
 
   const isMfaActive = Boolean(mfaStatus?.enabled || mfaStatus?.mfa_enabled);
@@ -107,8 +133,22 @@ export default function DashboardPage() {
               <span className="row-label">Protección de Sesión</span>
               <span className="row-value badge-success-text">Alta (JWT + Refresh)</span>
             </div>
+            <div className="panel-row">
+              <span className="row-label">Dispositivo Actual (CU-04)</span>
+              <span className="row-value">
+                {currentDeviceTrusted ? (
+                  <span className="badge-success-text" style={{ fontWeight: 600 }}>
+                    🛡️ Confiable ({currentDeviceName})
+                  </span>
+                ) : (
+                  <span style={{ color: '#fbbf24', fontWeight: 600 }}>
+                    ⚠️ No Confiable ({currentDeviceName})
+                  </span>
+                )}
+              </span>
+            </div>
           </div>
-          <div style={{ marginTop: '1.25rem' }}>
+          <div style={{ marginTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
             <button
               type="button"
               className={`btn btn-block ${
@@ -117,6 +157,13 @@ export default function DashboardPage() {
               onClick={() => setMfaModalOpen(true)}
             >
               {isMfaActive ? '⚙️ Desactivar 2FA' : '🔒 Configurar 2FA con App Móvil'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary btn-block"
+              onClick={() => setDevicesModalOpen(true)}
+            >
+              💻 Gestionar Dispositivos de Confianza ({devicesCount})
             </button>
           </div>
         </div>
@@ -159,10 +206,14 @@ export default function DashboardPage() {
             <p>Carga, versionado y control de acceso de documentos.</p>
           </div>
 
-          <div className="deck-card">
+          <div
+            className="deck-card deck-card-clickable"
+            onClick={() => setDevicesModalOpen(true)}
+            style={{ cursor: 'pointer' }}
+          >
             <div className="deck-icon">🔐</div>
-            <h4>Seguridad</h4>
-            <p>Gestión de claves, dispositivos vinculados y políticas.</p>
+            <h4>Seguridad & Dispositivos</h4>
+            <p>Gestión de claves, hardware local y dispositivos de confianza (CU-04).</p>
           </div>
 
           <Link to="/audit" className="deck-card deck-card-clickable" style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -179,6 +230,13 @@ export default function DashboardPage() {
         onClose={() => setMfaModalOpen(false)}
         isMfaEnabled={isMfaActive}
         onSuccess={fetchMfaStatus}
+      />
+
+      {/* Modal de Dispositivos de Confianza (CU-04) */}
+      <TrustedDevicesModal
+        isOpen={devicesModalOpen}
+        onClose={() => setDevicesModalOpen(false)}
+        onDeviceUpdated={fetchDeviceStatus}
       />
     </div>
   );

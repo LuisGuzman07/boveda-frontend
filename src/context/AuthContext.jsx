@@ -34,8 +34,8 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, []);
 
-  const login = async (correo, password) => {
-    const data = await loginUser(correo, password);
+  const login = async (correo, password, confiarDispositivo = false) => {
+    const data = await loginUser(correo, password, confiarDispositivo);
     if (data.mfa_required) {
       return data; // Requiere segundo paso (código 2FA)
     }
@@ -43,8 +43,8 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const completeMfaLogin = async (mfaToken, code) => {
-    const data = await verifyLoginMfa(mfaToken, code);
+  const completeMfaLogin = async (mfaToken, code, confiarDispositivo = false) => {
+    const data = await verifyLoginMfa(mfaToken, code, confiarDispositivo);
     _setAuthData(data);
     return data;
   };

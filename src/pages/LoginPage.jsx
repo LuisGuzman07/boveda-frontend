@@ -8,6 +8,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [mfaToken, setMfaToken] = useState('');
   const [totpCode, setTotpCode] = useState('');
+  const [confiarDispositivo, setConfiarDispositivo] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -20,7 +21,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const data = await login(correo, password);
+      const data = await login(correo, password, confiarDispositivo);
       if (data.mfa_required) {
         setMfaToken(data.mfa_token);
         setStep('mfa');
@@ -44,7 +45,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await completeMfaLogin(mfaToken, totpCode.trim());
+      await completeMfaLogin(mfaToken, totpCode.trim(), confiarDispositivo);
       navigate('/dashboard');
     } catch (err) {
       const msg =
@@ -103,7 +104,12 @@ export default function LoginPage() {
               </div>
 
               <div className="form-field">
-                <label htmlFor="password">Contraseña</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label htmlFor="password">Contraseña</label>
+                  <Link to="/forgot-password" className="forgot-password-link">
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
                 <input
                   id="password"
                   type="password"
@@ -114,6 +120,23 @@ export default function LoginPage() {
                   disabled={loading}
                   className="input-control"
                 />
+              </div>
+
+              <div className="trust-device-field">
+                <label className="trust-device-label" htmlFor="trust-device-login">
+                  <input
+                    id="trust-device-login"
+                    type="checkbox"
+                    checked={confiarDispositivo}
+                    onChange={(e) => setConfiarDispositivo(e.target.checked)}
+                    disabled={loading}
+                    className="trust-checkbox"
+                  />
+                  <span className="trust-label-text">
+                    <strong>🛡️ Confiar en este dispositivo</strong>
+                    <small>Autorizar este equipo local como terminal de confianza</small>
+                  </span>
+                </label>
               </div>
 
               <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
@@ -178,6 +201,23 @@ export default function LoginPage() {
                 />
               </div>
 
+              <div className="trust-device-field">
+                <label className="trust-device-label" htmlFor="trust-device-mfa">
+                  <input
+                    id="trust-device-mfa"
+                    type="checkbox"
+                    checked={confiarDispositivo}
+                    onChange={(e) => setConfiarDispositivo(e.target.checked)}
+                    disabled={loading}
+                    className="trust-checkbox"
+                  />
+                  <span className="trust-label-text">
+                    <strong>🛡️ Recordar y confiar en este dispositivo</strong>
+                    <small>Mantener este equipo como terminal autorizada</small>
+                  </span>
+                </label>
+              </div>
+
               <button
                 type="submit"
                 className="btn btn-primary btn-block"
@@ -194,6 +234,12 @@ export default function LoginPage() {
               >
                 ← Volver al login
               </button>
+
+              <div style={{ textAlign: 'center', marginTop: '0.75rem' }}>
+                <Link to="/forgot-password" className="forgot-password-link" style={{ fontSize: '0.85rem' }}>
+                  ¿Problemas con tu segundo factor? Recuperar cuenta
+                </Link>
+              </div>
             </form>
           </>
         )}

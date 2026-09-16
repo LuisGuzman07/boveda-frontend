@@ -1,30 +1,23 @@
 import api from '../api/axios';
+import { getDeviceInfo } from './deviceService';
 
-export const loginUser = async (correo, password, dispositivoInfo) => {
+export const loginUser = async (correo, password, confiarDispositivo = false) => {
   const payload = {
     correo,
     password,
-    dispositivo: dispositivoInfo || {
-      nombre: 'Navegador Web Frontend',
-      tipo: 'WEB',
-      sistema_operativo: navigator.platform || 'Web',
-      identificador_seguro: getOrCreateDeviceId(),
-    },
+    confiar_dispositivo: Boolean(confiarDispositivo),
+    dispositivo: getDeviceInfo(confiarDispositivo),
   };
   const response = await api.post('/auth/login', payload);
   return response.data;
 };
 
-export const verifyLoginMfa = async (mfaToken, code, dispositivoInfo) => {
+export const verifyLoginMfa = async (mfaToken, code, confiarDispositivo = false) => {
   const payload = {
     mfa_token: mfaToken,
     code,
-    dispositivo: dispositivoInfo || {
-      nombre: 'Navegador Web Frontend',
-      tipo: 'WEB',
-      sistema_operativo: navigator.platform || 'Web',
-      identificador_seguro: getOrCreateDeviceId(),
-    },
+    confiar_dispositivo: Boolean(confiarDispositivo),
+    dispositivo: getDeviceInfo(confiarDispositivo),
   };
   const response = await api.post('/auth/mfa/verify-login', payload);
   return response.data;
@@ -75,11 +68,24 @@ export const disableMfa = async (password) => {
   return response.data;
 };
 
-function getOrCreateDeviceId() {
-  let deviceId = localStorage.getItem('device_id');
-  if (!deviceId) {
-    deviceId = 'web-' + Math.random().toString(36).substring(2, 15) + '-' + Date.now();
-    localStorage.setItem('device_id', deviceId);
-  }
-  return deviceId;
-}
+// CU-03: Recuperación de Cuenta
+export const requestPasswordReset = async (correo) => {
+  const response = await api.post('/auth/recovery/forgot-password', { correo });
+  return response.data;
+};
+
+export const validateResetToken = async (token) => {
+  const response = await api.get(`/auth/recovery/validate-token?token=${encodeURIComponent(token)}`);
+  return response.data;
+};
+
+export const resetPassword = async (token, password, dispositivoInfo) => {
+  const payload = {
+    token,
+    password,
+    dispositivo: dispositivoInfo || getDeviceInfo(false),
+  };
+  const response = await api.post('/auth/recovery/reset-password', payload);
+  return response.data;
+};
+
