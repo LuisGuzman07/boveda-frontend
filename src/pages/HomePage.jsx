@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { checkBackendHealth, checkDatabaseHealth } from '../services/healthService';
+import { useAuth } from '../context/AuthContext';
 
 export default function HomePage() {
   const [backendStatus, setBackendStatus] = useState({ loading: true, ok: false, data: null, error: null });
   const [dbStatus, setDbStatus] = useState({ loading: true, ok: false, data: null, error: null });
+  const { isAuthenticated, user } = useAuth();
 
   const fetchStatus = async () => {
     setBackendStatus({ loading: true, ok: false, data: null, error: null });
@@ -42,31 +45,86 @@ export default function HomePage() {
 
   return (
     <div className="container">
-      <header className="header">
+      {/* Hero Section */}
+      <header className="hero-section">
         <div className="header-badge">
-          <span>🛡️ Bóveda Híbrida</span> • <span>Fase 3: Frontend</span>
+          <span>🛡️ Bóveda Híbrida</span> • <span>Seguridad Criptográfica</span>
         </div>
-        <h1>Panel de Integración y Estado</h1>
+        <h1>Bóveda Híbrida de Archivos Cifrados</h1>
         <p>
-          Bóveda híbrida de archivos cifrados para equipos académicos y pequeñas organizaciones.
+          Plataforma de alta seguridad para equipos académicos y pequeñas organizaciones.
+          Control de acceso basado en roles (RBAC), tokens JWT, cifrado y trazabilidad inmutable.
         </p>
+
+        <div className="hero-cta-group">
+          {isAuthenticated ? (
+            <Link to="/dashboard" className="btn btn-primary btn-lg">
+              🚀 Ir al Panel de Control ({user?.nombre})
+            </Link>
+          ) : (
+            <>
+              <Link to="/login" className="btn btn-primary btn-lg">
+                🔐 Iniciar Sesión
+              </Link>
+              <Link to="/register" className="btn btn-secondary btn-lg">
+                ✨ Registrarse (CU-01)
+              </Link>
+            </>
+          )}
+        </div>
       </header>
 
+      {/* Tarjetas de Casos de Uso Implementados */}
+      <div className="features-grid">
+        <div className="feature-card">
+          <div className="feature-icon">👤</div>
+          <h3>CU-01: Registro de Usuario</h3>
+          <p>
+            Creación segura de cuentas con validación de complejidad de contraseña, hash Bcrypt y
+            asignación automática del rol <strong>Miembro</strong>.
+          </p>
+        </div>
+
+        <div className="feature-card">
+          <div className="feature-icon">🔑</div>
+          <h3>Inicio de Sesión (JWT + Sesiones)</h3>
+          <p>
+            Autenticación con Access Tokens y Refresh Tokens, control de intentos fallidos,
+            bloqueo de fuerza bruta y registro de dispositivos.
+          </p>
+        </div>
+
+        <div className="feature-card">
+          <div className="feature-icon">🛡️</div>
+          <h3>CU-16: RBAC (Roles y Permisos)</h3>
+          <p>
+            Gestión granular de accesos con roles (Administrador, Miembro, Auditor, Invitado) y
+            catálogo de permisos por módulo.
+          </p>
+        </div>
+      </div>
+
+      {/* Monitor de Estado de Servicios */}
       <div className="card">
-        <h2 style={{ fontSize: '1.25rem', marginBottom: '1.25rem', fontWeight: '600' }}>
-          Estado de los Servicios
-        </h2>
+        <div className="card-header">
+          <h2 style={{ fontSize: '1.2rem', fontWeight: '600' }}>
+            📡 Estado del Backend & Base de Datos en Vivo
+          </h2>
+          <button className="btn-refresh-sm" onClick={fetchStatus}>
+            🔄 Actualizar
+          </button>
+        </div>
 
         <div className="status-section">
           {/* Backend Card */}
           <div className={`status-card ${backendStatus.loading ? 'loading' : backendStatus.ok ? 'success' : 'error'}`}>
             <div className="status-info">
-              <h3>FastAPI Backend</h3>
+              <h3>FastAPI Backend (Docker :8000)</h3>
               <p>
                 {backendStatus.loading
                   ? 'Comprobando conexión...'
                   : backendStatus.ok
-                  ? 'Backend conectado correctamente'
+                  ? 'FastAPI respondiendo correctamente'
                   : 'No se pudo conectar con el backend'}
               </p>
             </div>
@@ -79,7 +137,7 @@ export default function HomePage() {
           {/* Database Card */}
           <div className={`status-card ${dbStatus.loading ? 'loading' : dbStatus.ok ? 'success' : 'error'}`}>
             <div className="status-info">
-              <h3>PostgreSQL DB</h3>
+              <h3>PostgreSQL DB (Docker :5432)</h3>
               <p>
                 {dbStatus.loading
                   ? 'Comprobando base de datos...'
@@ -93,35 +151,6 @@ export default function HomePage() {
               <span>{dbStatus.loading ? 'Cargando' : dbStatus.ok ? 'Conectado' : 'Error'}</span>
             </div>
           </div>
-        </div>
-
-        <div className="btn-group">
-          <button className="btn btn-primary" onClick={fetchStatus}>
-            🔄 Reintentar conexión
-          </button>
-          <a
-            className="btn btn-secondary"
-            href="http://localhost:8000/docs"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            📖 Ver Swagger Docs
-          </a>
-        </div>
-      </div>
-
-      <div className="card">
-        <h3 style={{ fontSize: '1.1rem', marginBottom: '0.75rem', fontWeight: '600' }}>
-          Arquitectura del Flujo de Datos
-        </h3>
-        <div className="architecture-box">
-{`React Frontend (http://localhost:5173)
-       │
-       ▼ [Axios HTTP /api/v1/health]
-FastAPI Backend (http://localhost:8000)
-       │
-       ▼ [SQLAlchemy + psycopg SELECT 1]
-PostgreSQL Database (port 5432)`}
         </div>
       </div>
     </div>
