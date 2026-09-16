@@ -1675,3 +1675,272 @@ body {
   background: rgba(239, 68, 68, 0.12);
   color: #ef4444;
 }
+
+/* ==========================================================================
+   CU-05: REVOCACIÓN DE DISPOSITIVO DE CONFIANZA & CONTROL ADMINISTRATIVO
+   ========================================================================== */
+.modal-card-admin {
+  max-width: 940px;
+  width: 95%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-device-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.8rem;
+  color: #fca5a5;
+  line-height: 1.45;
+}
+
+.admin-device-alert .alert-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.admin-device-alert strong {
+  color: #f87171;
+}
+
+.admin-filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.search-form-flex {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+  max-width: 440px;
+}
+
+.search-form-flex .input-control {
+  flex: 1;
+}
+
+.filter-pill-group {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.pill-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pill-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.pill-btn.active {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.45);
+  font-weight: 600;
+}
+
+.admin-devices-table-wrap {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 420px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  background: rgba(10, 14, 23, 0.6);
+}
+
+.admin-devices-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.82rem;
+}
+
+.admin-devices-table thead {
+  position: sticky;
+  top: 0;
+  background: #0d131f;
+  z-index: 2;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.admin-devices-table th {
+  padding: 0.75rem 1rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.admin-devices-table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: middle;
+}
+
+.admin-devices-table tbody tr {
+  transition: background-color 0.15s;
+}
+
+.admin-devices-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.row-revoked {
+  opacity: 0.6;
+  background: rgba(239, 68, 68, 0.03);
+}
+
+.user-cell, .device-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.user-cell strong {
+  color: var(--text-main);
+  font-size: 0.85rem;
+}
+
+.user-cell small, .device-cell small {
+  color: var(--text-dim);
+  font-size: 0.74rem;
+}
+
+.device-id-mono {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+.device-pill-revoked {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+  white-space: nowrap;
+}
+
+.sessions-chip {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 0.35rem;
+  white-space: nowrap;
+}
+
+.sessions-chip.active {
+  background: rgba(16, 185, 129, 0.12);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.sessions-chip.zero {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-dim);
+  border: 1px solid var(--border-subtle);
+}
+
+.revoked-tag {
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.btn-danger-sm {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #f87171;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-danger-sm:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+.btn-danger-sm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Submodal Prompt */
+.submodal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  animation: fadeIn 0.15s ease;
+}
+
+.submodal-card {
+  background: #111827;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  max-width: 480px;
+  width: 90%;
+  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.6), 0 0 20px rgba(239, 68, 68, 0.15);
+}
+
+.submodal-card h4 {
+  margin: 0 0 0.5rem 0;
+  color: #f87171;
+  font-size: 1.1rem;
+}
+
+.submodal-warning {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.78rem;
+  color: #fbbf24;
+  margin: 0.75rem 0 0 0;
+  line-height: 1.4;
+}
+
+.submodal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}

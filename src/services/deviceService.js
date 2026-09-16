@@ -137,3 +137,31 @@ export async function deleteDevice(deviceId) {
   const response = await api.delete(`/devices/${deviceId}`);
   return response.data;
 }
+
+// ==============================================================================
+// CU-05: MÉTODOS DE ADMINISTRACIÓN GLOBAL DE TERMINALES (ADMIN)
+// ==============================================================================
+
+/**
+ * Consulta el inventario global de terminales de todos los usuarios (solo Admin).
+ */
+export async function listAllDevicesAdmin(params = {}) {
+  const response = await api.get('/devices/admin/all', { params });
+  return response.data;
+}
+
+/**
+ * Revocación forzada de un dispositivo y sus sesiones activas (solo Admin).
+ */
+export async function revokeDeviceAdmin(deviceId, motivo = 'Revocación administrativa por seguridad') {
+  const response = await api.post(`/devices/admin/${deviceId}/revoke`, { motivo });
+  return response.data;
+}
+
+/**
+ * Expulsión total de todos los dispositivos de un usuario (solo Admin).
+ */
+export async function revokeAllUserDevicesAdmin(userId, motivo = 'Revocación total de terminales por seguridad') {
+  const response = await api.post(`/devices/admin/user/${userId}/revoke-all`, { motivo });
+  return response.data;
+}

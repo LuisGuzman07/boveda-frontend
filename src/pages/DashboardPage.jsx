@@ -5,9 +5,11 @@ import { getMfaStatus } from '../services/authService';
 import { listDevices, getOrCreateDeviceId } from '../services/deviceService';
 import MfaModal from '../components/MfaModal';
 import TrustedDevicesModal from '../components/TrustedDevicesModal';
+import AdminDevicesModal from '../components/AdminDevicesModal';
 
 export default function DashboardPage() {
   const { user, roles, permissions } = useAuth();
+  const isAdmin = roles.includes('Administrador');
   const [mfaStatus, setMfaStatus] = useState({ mfa_enabled: false, tipo: null });
   const [mfaModalOpen, setMfaModalOpen] = useState(false);
   const [loadingMfa, setLoadingMfa] = useState(true);
@@ -17,6 +19,9 @@ export default function DashboardPage() {
   const [devicesCount, setDevicesCount] = useState(0);
   const [currentDeviceTrusted, setCurrentDeviceTrusted] = useState(false);
   const [currentDeviceName, setCurrentDeviceName] = useState('Navegador Web');
+
+  // CU-05: Administración y Revocación Global de Terminales
+  const [adminDevicesModalOpen, setAdminDevicesModalOpen] = useState(false);
 
   const fetchMfaStatus = async () => {
     try {
@@ -165,6 +170,15 @@ export default function DashboardPage() {
             >
               💻 Gestionar Dispositivos de Confianza ({devicesCount})
             </button>
+            {isAdmin && (
+              <button
+                type="button"
+                className="btn btn-block btn-admin-action"
+                onClick={() => setAdminDevicesModalOpen(true)}
+              >
+                🚨 Control Global de Terminales (CU-05)
+              </button>
+            )}
           </div>
         </div>
 
@@ -237,6 +251,13 @@ export default function DashboardPage() {
         isOpen={devicesModalOpen}
         onClose={() => setDevicesModalOpen(false)}
         onDeviceUpdated={fetchDeviceStatus}
+      />
+
+      {/* Modal de Administración Global de Terminales (CU-05) */}
+      <AdminDevicesModal
+        isOpen={adminDevicesModalOpen}
+        onClose={() => setAdminDevicesModalOpen(false)}
+        onDeviceRevoked={fetchDeviceStatus}
       />
     </div>
   );
