@@ -15,7 +15,7 @@ Frontend web para el sistema **Bóveda híbrida de archivos cifrados para equipo
 ## 2. Instalación de Dependencias
 
 ```bash
-npm install
+npm ci
 ```
 
 ---
@@ -28,11 +28,15 @@ Copia el archivo de ejemplo para configurar la URL del backend:
 cp .env.example .env
 ```
 
-Contenido de `.env`:
+Contenido de `.env` para desarrollo local:
 
 ```env
 VITE_API_URL=http://localhost:8000/api/v1
 ```
+
+`VITE_*` se incluye en el bundle web y nunca debe contener credenciales,
+tokens ni claves. Fuera de desarrollo local, configura una URL HTTPS; HTTP solo
+se permite para `localhost` o `127.0.0.1` durante desarrollo.
 
 ---
 

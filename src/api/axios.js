@@ -1,7 +1,45 @@
 import axios from 'axios';
 
+const localHttpHosts = new Set(['localhost', '127.0.0.1']);
+const localDevelopmentApiUrl = 'http://localhost:8000/api/v1';
+
+export function resolveApiBaseUrl(
+  rawUrl = import.meta.env.VITE_API_URL,
+  isDevelopment = import.meta.env.DEV
+) {
+  const candidate = rawUrl?.trim() || (isDevelopment ? localDevelopmentApiUrl : '');
+  if (!candidate) {
+    throw new Error('VITE_API_URL debe configurarse con una URL HTTPS fuera de desarrollo local.');
+  }
+
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(candidate);
+  } catch {
+    throw new Error('VITE_API_URL debe ser una URL absoluta válida.');
+  }
+
+  if (parsedUrl.username || parsedUrl.password) {
+    throw new Error('VITE_API_URL no puede incluir credenciales.');
+  }
+  if (parsedUrl.protocol === 'https:') {
+    return parsedUrl.toString().replace(/\/$/, '');
+  }
+  if (
+    isDevelopment &&
+    parsedUrl.protocol === 'http:' &&
+    localHttpHosts.has(parsedUrl.hostname)
+  ) {
+    return parsedUrl.toString().replace(/\/$/, '');
+  }
+
+  throw new Error('HTTP solo está permitido para localhost en desarrollo local.');
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -31,7 +69,7 @@ api.interceptors.response.use(
       if (refreshToken) {
         try {
           const res = await axios.post(
-            `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/auth/refresh`,
+            `${API_BASE_URL}/auth/refresh`,
             { refresh_token: refreshToken }
           );
           const newAccessToken = res.data.access_token;

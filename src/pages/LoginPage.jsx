@@ -57,12 +57,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickFill = (email, pass) => {
-    setCorreo(email);
-    setPassword(pass);
-    setError(null);
-  };
-
   const handleBackToCredentials = () => {
     setStep('credentials');
     setTotpCode('');
@@ -120,26 +114,6 @@ export default function LoginPage() {
                 {loading ? 'Ingresando...' : 'Iniciar Sesión'}
               </button>
             </form>
-
-            <div className="demo-accounts-helper">
-              <span className="helper-label">Accesos rápidos de prueba:</span>
-              <div className="helper-pills">
-                <button
-                  type="button"
-                  className="pill-btn"
-                  onClick={() => handleQuickFill('admin@boveda.com', 'Admin1234!*')}
-                >
-                  Administrador
-                </button>
-                <button
-                  type="button"
-                  className="pill-btn"
-                  onClick={() => handleQuickFill('investigador@boveda.com', 'User1234!*')}
-                >
-                  Miembro
-                </button>
-              </div>
-            </div>
 
             <div className="auth-footer">
               <p>
