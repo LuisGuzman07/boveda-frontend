@@ -27,6 +27,7 @@ export default function DashboardPage() {
   }, []);
 
   const isMfaActive = Boolean(mfaStatus?.enabled || mfaStatus?.mfa_enabled);
+  const canViewAudit = permissions.includes('audit:read');
 
   return (
     <div className="container">
@@ -165,11 +166,13 @@ export default function DashboardPage() {
             <p>Gestión de claves, dispositivos vinculados y políticas.</p>
           </div>
 
-          <Link to="/audit" className="deck-card deck-card-clickable" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div className="deck-icon">📜</div>
-            <h4>Auditoría</h4>
-            <p>Registro continuo e inmutable de eventos de seguridad.</p>
-          </Link>
+          {canViewAudit && (
+            <Link to="/audit" className="deck-card deck-card-clickable" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div className="deck-icon">📜</div>
+              <h4>Auditoría</h4>
+              <p>Registro continuo e inmutable de eventos de seguridad.</p>
+            </Link>
+          )}
         </div>
       </section>
 

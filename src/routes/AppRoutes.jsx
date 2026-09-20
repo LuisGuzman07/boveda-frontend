@@ -6,6 +6,7 @@ import RegisterPage from '../pages/RegisterPage';
 import DashboardPage from '../pages/DashboardPage';
 import AuditPage from '../pages/AuditPage';
 import ProtectedRoute from '../components/ProtectedRoute';
+import PermissionRoute from '../components/PermissionRoute';
 
 export default function AppRoutes() {
   return (
@@ -24,9 +25,9 @@ export default function AppRoutes() {
       <Route
         path="/audit"
         element={
-          <ProtectedRoute>
+          <PermissionRoute permission="audit:read">
             <AuditPage />
-          </ProtectedRoute>
+          </PermissionRoute>
         }
       />
       <Route path="*" element={<Navigate to="/" replace />} />

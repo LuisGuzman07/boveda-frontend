@@ -1,4 +1,10 @@
-import api from '../api/axios';
+import api, { WEB_AUTH_ENDPOINTS, getCsrfHeaders, refreshWebSession } from '../api/axios';
+
+const webAuthRequestConfig = {
+  withCredentials: true,
+  skipAuthorization: true,
+  skipAuthRefresh: true,
+};
 
 export const loginUser = async (correo, password, dispositivoInfo) => {
   const payload = {
@@ -11,7 +17,7 @@ export const loginUser = async (correo, password, dispositivoInfo) => {
       identificador_seguro: getOrCreateDeviceId(),
     },
   };
-  const response = await api.post('/auth/login', payload);
+  const response = await api.post(WEB_AUTH_ENDPOINTS.login, payload, webAuthRequestConfig);
   return response.data;
 };
 
@@ -26,7 +32,11 @@ export const verifyLoginMfa = async (mfaToken, code, dispositivoInfo) => {
       identificador_seguro: getOrCreateDeviceId(),
     },
   };
-  const response = await api.post('/auth/mfa/verify-login', payload);
+  const response = await api.post(
+    WEB_AUTH_ENDPOINTS.verifyMfaLogin,
+    payload,
+    webAuthRequestConfig
+  );
   return response.data;
 };
 
@@ -44,15 +54,14 @@ export const getMe = async () => {
   return response.data;
 };
 
-export const logoutUser = async (refreshToken) => {
-  try {
-    await api.post('/auth/logout', { refresh_token: refreshToken });
-  } catch (err) {
-    console.error('Error al notificar logout al backend:', err);
-  } finally {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-  }
+export const refreshSession = () => refreshWebSession();
+
+export const logoutUser = async () => {
+  const response = await api.post(WEB_AUTH_ENDPOINTS.logout, undefined, {
+    ...webAuthRequestConfig,
+    headers: getCsrfHeaders(),
+  });
+  return response.data;
 };
 
 export const getMfaStatus = async () => {

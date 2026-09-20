@@ -6,7 +6,7 @@ export default function Navbar() {
   const { user, roles, permissions, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
 
-  const canViewAudit = roles.includes('Administrador') || permissions.includes('audit:read');
+  const canViewAudit = permissions.includes('audit:read');
 
   const handleLogout = async () => {
     await logout();

@@ -1240,4 +1240,41 @@ body {
   border-color: var(--primary) !important;
 }
 
+.access-denied {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.access-denied-card {
+  width: 100%;
+  max-width: 500px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--danger-border);
+  border-radius: 0.85rem;
+}
+
+.access-denied-code {
+  display: inline-block;
+  margin-bottom: 0.65rem;
+  color: #fca5a5;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.access-denied-card h2 {
+  margin-bottom: 0.5rem;
+  font-size: 1.3rem;
+}
+
+.access-denied-card p {
+  margin-bottom: 1.5rem;
+  color: var(--text-muted);
+}
+
 

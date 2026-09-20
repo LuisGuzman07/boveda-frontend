@@ -1,37 +1,142 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { loginUser, registerUser, verifyLoginMfa, getMe, logoutUser } from '../services/authService';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import {
+  getMe,
+  loginUser,
+  logoutUser,
+  refreshSession,
+  registerUser,
+  verifyLoginMfa,
+} from '../services/authService';
+import {
+  setAccessTokenProvider,
+  setRefreshedTokenHandler,
+  setUnauthorizedHandler,
+} from '../api/axios';
 
 const AuthContext = createContext(null);
+
+function removeLegacyStoredTokens() {
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+}
+
+function getStringValues(values, property) {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+
+  return values
+    .map((value) => (typeof value === 'string' ? value : value?.[property]))
+    .filter(Boolean);
+}
+
+function getAuthProfile(data) {
+  const user = data?.usuario || data?.user || data;
+  const roleSource = data?.roles || user?.roles || [];
+  const directPermissions = data?.permisos ?? data?.permissions;
+  const permissionSource = Array.isArray(directPermissions)
+    ? directPermissions
+    : roleSource.flatMap((role) => role?.permisos || role?.permissions || []);
+
+  return {
+    user,
+    roles: getStringValues(roleSource, 'nombre'),
+    permissions: [...new Set(getStringValues(permissionSource, 'codigo'))],
+  };
+}
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [roles, setRoles] = useState([]);
   const [permissions, setPermissions] = useState([]);
-  const [token, setToken] = useState(localStorage.getItem('access_token'));
+  const [accessToken, setAccessToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const accessTokenRef = useRef(null);
+  const sessionVersionRef = useRef(0);
+
+  const updateAccessToken = (nextToken) => {
+    const token = typeof nextToken === 'string' && nextToken ? nextToken : null;
+    accessTokenRef.current = token;
+    setAccessToken(token);
+  };
+
+  const clearAuthState = () => {
+    sessionVersionRef.current += 1;
+    updateAccessToken(null);
+    setUser(null);
+    setRoles([]);
+    setPermissions([]);
+    removeLegacyStoredTokens();
+  };
+
+  const setAuthData = (data) => {
+    if (!data?.access_token) {
+      throw new Error('La respuesta de inicio de sesión no devolvió un token de acceso.');
+    }
+
+    sessionVersionRef.current += 1;
+    updateAccessToken(data.access_token);
+
+    const profile = getAuthProfile(data);
+    setUser(profile.user);
+    setRoles(profile.roles);
+    setPermissions(profile.permissions);
+  };
 
   useEffect(() => {
-    const initAuth = async () => {
-      const storedToken = localStorage.getItem('access_token');
-      if (storedToken) {
-        try {
-          const userData = await getMe();
-          setUser(userData);
-          const userRoles = userData.roles?.map((r) => r.nombre) || [];
-          const userPerms = userData.roles?.flatMap((r) => r.permisos?.map((p) => p.codigo)) || [];
-          setRoles(userRoles);
-          setPermissions([...new Set(userPerms)]);
-        } catch (err) {
-          console.error('Sesión inválida o expirada:', err);
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          setUser(null);
+    setAccessTokenProvider(() => accessTokenRef.current);
+    setRefreshedTokenHandler((nextToken) => {
+      if (accessTokenRef.current) {
+        updateAccessToken(nextToken);
+      }
+    });
+    setUnauthorizedHandler((failedToken) => {
+      if (!failedToken || failedToken === accessTokenRef.current) {
+        clearAuthState();
+      }
+    });
+
+    let active = true;
+    removeLegacyStoredTokens();
+
+    const restoreSession = async () => {
+      const sessionVersion = sessionVersionRef.current;
+
+      try {
+        const refreshedToken = await refreshSession();
+        if (!active || sessionVersion !== sessionVersionRef.current) {
+          return;
+        }
+
+        updateAccessToken(refreshedToken);
+        const userData = await getMe();
+        if (!active || sessionVersion !== sessionVersionRef.current) {
+          return;
+        }
+
+        const profile = getAuthProfile(userData);
+        setUser(profile.user);
+        setRoles(profile.roles);
+        setPermissions(profile.permissions);
+      } catch {
+        if (active && sessionVersion === sessionVersionRef.current) {
+          clearAuthState();
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
         }
       }
-      setLoading(false);
     };
 
-    initAuth();
+    restoreSession();
+
+    return () => {
+      active = false;
+      setAccessTokenProvider(null);
+      setRefreshedTokenHandler(null);
+      setUnauthorizedHandler(null);
+    };
   }, []);
 
   const login = async (correo, password) => {
@@ -39,23 +144,14 @@ export const AuthProvider = ({ children }) => {
     if (data.mfa_required) {
       return data; // Requiere segundo paso (código 2FA)
     }
-    _setAuthData(data);
+    setAuthData(data);
     return data;
   };
 
   const completeMfaLogin = async (mfaToken, code) => {
     const data = await verifyLoginMfa(mfaToken, code);
-    _setAuthData(data);
+    setAuthData(data);
     return data;
-  };
-
-  const _setAuthData = (data) => {
-    localStorage.setItem('access_token', data.access_token);
-    localStorage.setItem('refresh_token', data.refresh_token);
-    setToken(data.access_token);
-    setUser(data.usuario);
-    setRoles(data.roles);
-    setPermissions(data.permisos);
   };
 
   const register = async (nombre, correo, password) => {
@@ -64,12 +160,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    const refreshToken = localStorage.getItem('refresh_token');
-    await logoutUser(refreshToken);
-    setToken(null);
-    setUser(null);
-    setRoles([]);
-    setPermissions([]);
+    clearAuthState();
+
+    try {
+      await logoutUser();
+    } catch {
+      // Local cleanup must still complete when the cookie cannot be revoked remotely.
+    }
   };
 
   return (
@@ -78,8 +175,7 @@ export const AuthProvider = ({ children }) => {
         user,
         roles,
         permissions,
-        token,
-        isAuthenticated: !!user,
+        isAuthenticated: Boolean(user && accessToken),
         loading,
         login,
         completeMfaLogin,
