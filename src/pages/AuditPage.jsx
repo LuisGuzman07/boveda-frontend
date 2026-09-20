@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getAuditEvents, getAuditStats, downloadAuditCsv } from '../services/auditService';
+import { useAuth } from '../context/AuthContext';
 
 export default function AuditPage() {
+  const { permissions } = useAuth();
+  const canExport = permissions.includes('audit:export');
   const [events, setEvents] = useState([]);
   const [stats, setStats] = useState(null);
   const [total, setTotal] = useState(0);
@@ -64,6 +67,10 @@ export default function AuditPage() {
   };
 
   const handleExport = async () => {
+    if (!canExport) {
+      return;
+    }
+
     setExporting(true);
     try {
       const params = {};
@@ -102,14 +109,16 @@ export default function AuditPage() {
             Registro continuo e inmutable de eventos de seguridad, accesos y operaciones.
           </p>
         </div>
-        <button
-          type="button"
-          className="btn btn-secondary btn-export"
-          onClick={handleExport}
-          disabled={exporting || loading}
-        >
-          {exporting ? 'Descargando...' : '📥 Exportar CSV'}
-        </button>
+        {canExport && (
+          <button
+            type="button"
+            className="btn btn-secondary btn-export"
+            onClick={handleExport}
+            disabled={exporting || loading}
+          >
+            {exporting ? 'Descargando...' : '📥 Exportar CSV'}
+          </button>
+        )}
       </div>
 
       {/* Tarjetas de Estadísticas Rápidas */}
