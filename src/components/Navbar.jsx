@@ -30,6 +30,9 @@ export default function Navbar() {
               <Link to="/dashboard" className="nav-item">
                 Panel
               </Link>
+              <Link to="/vaults" className="nav-item">
+                Bóvedas
+              </Link>
               {canViewAudit && (
                 <Link to="/audit" className="nav-item">
                   Auditoría

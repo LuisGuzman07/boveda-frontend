@@ -1,4 +1,5 @@
 import api from '../api/axios';
+import { getDevicePublicKeyBase64 } from './vaultCryptoService';
 
 const STORAGE_KEY = 'boveda_trusted_device_id';
 
@@ -57,6 +58,7 @@ export function detectEnvironment() {
     tipo: type,
     sistema_operativo: os,
     identificador_seguro: getOrCreateDeviceId(),
+    public_key: getDevicePublicKeyBase64(),
   };
 }
 
@@ -67,6 +69,7 @@ export function getDeviceInfo(confiarDispositivo = false) {
   const env = detectEnvironment();
   return {
     ...env,
+    public_key: getDevicePublicKeyBase64(),
     confiar_dispositivo: Boolean(confiarDispositivo),
   };
 }

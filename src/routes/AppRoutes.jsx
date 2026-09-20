@@ -7,6 +7,7 @@ import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/ResetPasswordPage';
 import DashboardPage from '../pages/DashboardPage';
 import AuditPage from '../pages/AuditPage';
+import VaultsPage from '../pages/VaultsPage';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 export default function AppRoutes() {
@@ -23,6 +24,14 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/vaults"
+        element={
+          <ProtectedRoute>
+            <VaultsPage />
           </ProtectedRoute>
         }
       />

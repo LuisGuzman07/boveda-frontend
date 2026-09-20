@@ -6,6 +6,7 @@ import { listDevices, getOrCreateDeviceId } from '../services/deviceService';
 import MfaModal from '../components/MfaModal';
 import TrustedDevicesModal from '../components/TrustedDevicesModal';
 import AdminDevicesModal from '../components/AdminDevicesModal';
+import SecurityPoliciesModal from '../components/SecurityPoliciesModal';
 
 export default function DashboardPage() {
   const { user, roles, permissions } = useAuth();
@@ -22,6 +23,9 @@ export default function DashboardPage() {
 
   // CU-05: Administración y Revocación Global de Terminales
   const [adminDevicesModalOpen, setAdminDevicesModalOpen] = useState(false);
+
+  // CU-17: Políticas de Seguridad Globales
+  const [policiesModalOpen, setPoliciesModalOpen] = useState(false);
 
   const fetchMfaStatus = async () => {
     try {
@@ -171,13 +175,23 @@ export default function DashboardPage() {
               💻 Gestionar Dispositivos de Confianza ({devicesCount})
             </button>
             {isAdmin && (
-              <button
-                type="button"
-                className="btn btn-block btn-admin-action"
-                onClick={() => setAdminDevicesModalOpen(true)}
-              >
-                🚨 Control Global de Terminales (CU-05)
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="btn btn-block btn-admin-action"
+                  onClick={() => setAdminDevicesModalOpen(true)}
+                >
+                  🚨 Control Global de Terminales (CU-05)
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-block btn-secondary"
+                  onClick={() => setPoliciesModalOpen(true)}
+                  style={{ border: '1px solid rgba(59, 130, 246, 0.4)', color: '#93c5fd' }}
+                >
+                  🛡️ Políticas de Seguridad Globales (CU-17)
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -208,11 +222,15 @@ export default function DashboardPage() {
         </div>
 
         <div className="modules-deck">
-          <div className="deck-card">
+          <Link
+            to="/vaults"
+            className="deck-card deck-card-clickable"
+            style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+          >
             <div className="deck-icon">🗄️</div>
-            <h4>Bóvedas</h4>
-            <p>Repositorios cifrados para almacenar archivos confidenciales.</p>
-          </div>
+            <h4>Bóvedas (CU-06)</h4>
+            <p>Repositorios cifrados con Cero Conocimiento (AES-256-GCM + Argon2id).</p>
+          </Link>
 
           <div className="deck-card">
             <div className="deck-icon">📁</div>
@@ -258,6 +276,12 @@ export default function DashboardPage() {
         isOpen={adminDevicesModalOpen}
         onClose={() => setAdminDevicesModalOpen(false)}
         onDeviceRevoked={fetchDeviceStatus}
+      />
+
+      {/* Modal de Políticas de Seguridad Globales (CU-17) */}
+      <SecurityPoliciesModal
+        isOpen={policiesModalOpen}
+        onClose={() => setPoliciesModalOpen(false)}
       />
     </div>
   );
