@@ -22,9 +22,16 @@ function AuthProbe() {
     <div>
       <span data-testid="loading">{String(auth.loading)}</span>
       <span data-testid="authenticated">{String(auth.isAuthenticated)}</span>
+      <span data-testid="locked">{String(auth.isLocked)}</span>
       <span data-testid="user">{auth.user?.nombre || 'none'}</span>
       <button type="button" onClick={() => auth.logout()}>
         Cerrar sesión
+      </button>
+      <button type="button" onClick={() => auth.lockForInactivity()}>
+        Bloquear por inactividad
+      </button>
+      <button type="button" onClick={() => auth.resumeFromInactivityLock()}>
+        Ir a reautenticación
       </button>
     </div>
   );
@@ -133,5 +140,41 @@ describe('AuthProvider web sessions', () => {
     expect(harness.mock.history.post).toHaveLength(2);
     expect(localStorage.getItem('access_token')).toBeNull();
     expect(localStorage.getItem('refresh_token')).toBeNull();
+  });
+
+  it('locks local memory before asking the server to revoke the web session', async () => {
+    const lockRequests = [];
+
+    mockCookieSession();
+    harness.mock.onPost(harness.WEB_AUTH_ENDPOINTS.inactivityLock).reply((config) => {
+      lockRequests.push(config);
+      return [204];
+    });
+
+    await renderAuthenticatedProvider();
+    document.cookie = 'csrf_token=lock-csrf-value; path=/';
+    localStorage.setItem('access_token', 'legacy-access-token');
+    localStorage.setItem('refresh_token', 'legacy-refresh-token');
+    fireEvent.click(screen.getByRole('button', { name: 'Bloquear por inactividad' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
+      expect(screen.getByTestId('locked')).toHaveTextContent('true');
+    });
+
+    expect(lockRequests).toHaveLength(1);
+    expect(lockRequests[0].withCredentials).toBe(true);
+    expect(lockRequests[0].skipAuthorization).toBe(true);
+    expect(lockRequests[0].skipAuthRefresh).toBe(true);
+    expect(getHeader(lockRequests[0], 'Authorization')).toBe('Bearer fresh-access-token');
+    expect(getHeader(lockRequests[0], 'X-CSRF-Token')).toBe('lock-csrf-value');
+    expect(localStorage.getItem('access_token')).toBeNull();
+    expect(localStorage.getItem('refresh_token')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ir a reautenticación' }));
+    await waitFor(() => {
+      expect(screen.getByTestId('locked')).toHaveTextContent('false');
+      expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
+    });
   });
 });

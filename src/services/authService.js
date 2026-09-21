@@ -64,6 +64,19 @@ export const logoutUser = async () => {
   return response.data;
 };
 
+export const lockWebSessionForInactivity = async (accessToken) => {
+  const response = await api.post(WEB_AUTH_ENDPOINTS.inactivityLock, undefined, {
+    withCredentials: true,
+    skipAuthorization: true,
+    skipAuthRefresh: true,
+    headers: {
+      ...getCsrfHeaders(),
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data;
+};
+
 export const getMfaStatus = async () => {
   const response = await api.get('/auth/mfa/status');
   return response.data;

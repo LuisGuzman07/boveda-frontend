@@ -10,6 +10,7 @@ export const WEB_AUTH_ENDPOINTS = Object.freeze({
   verifyMfaLogin: '/auth/web/mfa/verify-login',
   refresh: '/auth/web/refresh',
   logout: '/auth/web/logout',
+  inactivityLock: '/auth/web/inactivity-lock',
 });
 
 export function resolveApiBaseUrl(

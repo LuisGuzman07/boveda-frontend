@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import {
   getMe,
   loginUser,
+  lockWebSessionForInactivity,
   logoutUser,
   refreshSession,
   registerUser,
@@ -50,9 +51,11 @@ export const AuthProvider = ({ children }) => {
   const [roles, setRoles] = useState([]);
   const [permissions, setPermissions] = useState([]);
   const [accessToken, setAccessToken] = useState(null);
+  const [isLocked, setIsLocked] = useState(false);
   const [loading, setLoading] = useState(true);
   const accessTokenRef = useRef(null);
   const sessionVersionRef = useRef(0);
+  const inactivityLockRef = useRef(false);
 
   const updateAccessToken = (nextToken) => {
     const token = typeof nextToken === 'string' && nextToken ? nextToken : null;
@@ -60,12 +63,14 @@ export const AuthProvider = ({ children }) => {
     setAccessToken(token);
   };
 
-  const clearAuthState = () => {
+  const clearAuthState = ({ locked = false } = {}) => {
     sessionVersionRef.current += 1;
     updateAccessToken(null);
     setUser(null);
     setRoles([]);
     setPermissions([]);
+    setIsLocked(locked);
+    inactivityLockRef.current = locked;
     removeLegacyStoredTokens();
   };
 
@@ -75,12 +80,14 @@ export const AuthProvider = ({ children }) => {
     }
 
     sessionVersionRef.current += 1;
+    inactivityLockRef.current = false;
     updateAccessToken(data.access_token);
 
     const profile = getAuthProfile(data);
     setUser(profile.user);
     setRoles(profile.roles);
     setPermissions(profile.permissions);
+    setIsLocked(false);
   };
 
   useEffect(() => {
@@ -169,18 +176,50 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const lockForInactivity = async ({ notifyServer = true } = {}) => {
+    if (inactivityLockRef.current) {
+      return;
+    }
+    inactivityLockRef.current = true;
+
+    const token = accessTokenRef.current;
+    sessionVersionRef.current += 1;
+    updateAccessToken(null);
+    setUser(null);
+    setRoles([]);
+    setPermissions([]);
+    setIsLocked(true);
+    removeLegacyStoredTokens();
+
+    if (notifyServer && token) {
+      try {
+        await lockWebSessionForInactivity(token);
+      } catch {
+        // The local lock remains mandatory even if a network failure delays server revocation.
+      }
+    }
+  };
+
+  const resumeFromInactivityLock = () => {
+    setIsLocked(false);
+    inactivityLockRef.current = false;
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user,
         roles,
         permissions,
-        isAuthenticated: Boolean(user && accessToken),
+        isAuthenticated: Boolean(user && accessToken && !isLocked),
+        isLocked,
         loading,
         login,
         completeMfaLogin,
         register,
         logout,
+        lockForInactivity,
+        resumeFromInactivityLock,
       }}
     >
       {children}

@@ -1277,4 +1277,232 @@ body {
   color: var(--text-muted);
 }
 
+/* CU12 / CU17 */
+.security-card-actions {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+}
+
+.policy-modal-backdrop {
+  align-items: flex-start;
+  overflow-y: auto;
+}
+
+.policy-modal-card {
+  max-width: 760px;
+  margin: 2rem auto;
+}
+
+.policy-modal-subtitle {
+  color: var(--text-muted);
+  font-size: 0.775rem;
+  margin-top: 0.2rem;
+}
+
+.policy-loading {
+  color: var(--text-muted);
+  padding: 2.5rem 0.5rem;
+  text-align: center;
+}
+
+.policy-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.policy-row {
+  align-items: start;
+  background: rgba(6, 9, 15, 0.36);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.6rem;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 220px);
+  padding: 1rem;
+}
+
+.policy-copy p {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  margin-top: 0.45rem;
+}
+
+.policy-code-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.policy-code-row code {
+  color: #bfdbfe;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.policy-status,
+.policy-read-only {
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 0.15rem 0.45rem;
+  text-transform: uppercase;
+}
+
+.policy-status.applied {
+  background: var(--success-bg);
+  border: 1px solid var(--success-border);
+  color: var(--success);
+}
+
+.policy-status.configured {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+
+.policy-notice {
+  color: #fbbf24 !important;
+}
+
+.policy-control {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.policy-control label {
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.policy-input-row {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.policy-input-row .input-control {
+  min-width: 0;
+  width: 100%;
+}
+
+.policy-read-only {
+  color: var(--text-dim);
+  padding-left: 0;
+}
+
+.inactivity-lock-backdrop {
+  align-items: center;
+  backdrop-filter: blur(16px);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.22), transparent 42%),
+    rgba(4, 7, 12, 0.94);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 1.5rem;
+  position: fixed;
+  z-index: 200;
+}
+
+.inactivity-warning {
+  background: rgba(146, 64, 14, 0.96);
+  border: 1px solid rgba(253, 230, 138, 0.46);
+  border-radius: 0.55rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
+  color: #fef3c7;
+  font-size: 0.82rem;
+  left: 50%;
+  max-width: min(34rem, calc(100vw - 2rem));
+  padding: 0.7rem 0.9rem;
+  position: fixed;
+  text-align: center;
+  top: 1rem;
+  transform: translateX(-50%);
+  z-index: 150;
+}
+
+.inactivity-lock-card {
+  background: linear-gradient(145deg, rgba(20, 31, 50, 0.98), rgba(9, 14, 24, 0.98));
+  border: 1px solid rgba(96, 165, 250, 0.32);
+  border-radius: 1rem;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.65);
+  max-width: 430px;
+  padding: 2.25rem;
+  text-align: center;
+  width: 100%;
+}
+
+.inactivity-lock-mark {
+  align-items: center;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  border-radius: 50%;
+  color: #bfdbfe;
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 1.7rem;
+  height: 3.4rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+  width: 3.4rem;
+}
+
+.inactivity-lock-eyebrow {
+  color: #93c5fd;
+  font-family: var(--font-mono);
+  font-size: 0.73rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.inactivity-lock-card h2 {
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+  margin: 0.65rem 0 0.8rem;
+}
+
+.inactivity-lock-card p:not(.inactivity-lock-eyebrow) {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.inactivity-lock-detail {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.45rem;
+  color: var(--text-dim) !important;
+  font-family: var(--font-mono);
+  font-size: 0.76rem !important;
+  margin: 1.25rem 0;
+  padding: 0.65rem;
+}
+
+@media (max-width: 640px) {
+  .policy-modal-card {
+    margin: 0.75rem auto;
+    padding: 1.25rem;
+  }
+
+  .policy-row {
+    grid-template-columns: 1fr;
+  }
+
+  .policy-input-row .btn {
+    min-width: 5.5rem;
+  }
+
+  .inactivity-lock-card {
+    padding: 1.75rem;
+  }
+}
+
 

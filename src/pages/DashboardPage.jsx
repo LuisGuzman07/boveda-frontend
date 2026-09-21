@@ -3,12 +3,16 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMfaStatus } from '../services/authService';
 import MfaModal from '../components/MfaModal';
+import SecurityPoliciesModal from '../components/SecurityPoliciesModal';
+import { useInactivity } from '../context/InactivityContext';
 
 export default function DashboardPage() {
   const { user, roles, permissions } = useAuth();
   const [mfaStatus, setMfaStatus] = useState({ mfa_enabled: false, tipo: null });
   const [mfaModalOpen, setMfaModalOpen] = useState(false);
+  const [policyModalOpen, setPolicyModalOpen] = useState(false);
   const [loadingMfa, setLoadingMfa] = useState(true);
+  const { refreshInactivityPolicy } = useInactivity();
 
   const fetchMfaStatus = async () => {
     try {
@@ -28,6 +32,8 @@ export default function DashboardPage() {
 
   const isMfaActive = Boolean(mfaStatus?.enabled || mfaStatus?.mfa_enabled);
   const canViewAudit = permissions.includes('audit:read');
+  const canReadPolicies = permissions.includes('policies:read');
+  const canWritePolicies = permissions.includes('policies:write');
 
   return (
     <div className="container">
@@ -109,7 +115,7 @@ export default function DashboardPage() {
               <span className="row-value badge-success-text">Alta (JWT + Refresh)</span>
             </div>
           </div>
-          <div style={{ marginTop: '1.25rem' }}>
+          <div className="security-card-actions">
             <button
               type="button"
               className={`btn btn-block ${
@@ -119,6 +125,15 @@ export default function DashboardPage() {
             >
               {isMfaActive ? '⚙️ Desactivar 2FA' : '🔒 Configurar 2FA con App Móvil'}
             </button>
+            {canReadPolicies && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-block"
+                onClick={() => setPolicyModalOpen(true)}
+              >
+                Revisar políticas de seguridad
+              </button>
+            )}
           </div>
         </div>
 
@@ -182,6 +197,12 @@ export default function DashboardPage() {
         onClose={() => setMfaModalOpen(false)}
         isMfaEnabled={isMfaActive}
         onSuccess={fetchMfaStatus}
+      />
+      <SecurityPoliciesModal
+        isOpen={policyModalOpen}
+        onClose={() => setPolicyModalOpen(false)}
+        onPoliciesChanged={refreshInactivityPolicy}
+        canWrite={canWritePolicies}
       />
     </div>
   );
