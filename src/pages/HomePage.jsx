@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { LockKeyhole, ShieldCheck, FileCheck } from 'lucide-react';
 import { checkBackendHealth, checkDatabaseHealth } from '../services/healthService';
 import { useAuth } from '../context/AuthContext';
 
@@ -65,7 +66,9 @@ export default function HomePage() {
       {/* Características Principales */}
       <section className="features-grid">
         <div className="feature-card">
-          <div className="feature-icon-wrapper">🔐</div>
+          <div className="feature-icon-wrapper">
+            <LockKeyhole size={28} />
+          </div>
           <h3>Cifrado y Seguridad</h3>
           <p>
             Protección de archivos mediante algoritmos criptográficos robustos y almacenamiento seguro.
@@ -73,7 +76,9 @@ export default function HomePage() {
         </div>
 
         <div className="feature-card">
-          <div className="feature-icon-wrapper">🛡️</div>
+          <div className="feature-icon-wrapper">
+            <ShieldCheck size={28} />
+          </div>
           <h3>Control de Acceso (RBAC)</h3>
           <p>
             Permisos basados en roles con separación estricta de privilegios para administradores, investigadores y auditores.
@@ -81,7 +86,9 @@ export default function HomePage() {
         </div>
 
         <div className="feature-card">
-          <div className="feature-icon-wrapper">📋</div>
+          <div className="feature-icon-wrapper">
+            <FileCheck size={28} />
+          </div>
           <h3>Trazabilidad e Integridad</h3>
           <p>
             Bitácora inmutable de eventos para garantizar la auditoría continua de accesos y operaciones.

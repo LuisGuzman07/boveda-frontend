@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ShieldCheck, AlertTriangle, Smartphone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
@@ -76,14 +77,16 @@ export default function LoginPage() {
         {step === 'credentials' ? (
           <>
             <div className="auth-header">
-              <div className="auth-brand-icon">🛡️</div>
+              <div className="auth-brand-icon">
+                <ShieldCheck size={36} />
+              </div>
               <h2>Iniciar Sesión</h2>
               <p>Ingresa a tu cuenta para acceder a la bóveda</p>
             </div>
 
             {error && (
               <div className="alert-banner error">
-                <span>⚠️</span>
+                <AlertTriangle size={18} style={{ flexShrink: 0 }} />
                 <p>{error}</p>
               </div>
             )}
@@ -133,7 +136,9 @@ export default function LoginPage() {
                     className="trust-checkbox"
                   />
                   <span className="trust-label-text">
-                    <strong>🛡️ Confiar en este dispositivo</strong>
+                    <strong style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <ShieldCheck size={16} /> Confiar en este dispositivo
+                    </strong>
                     <small>Autorizar este equipo local como terminal de confianza</small>
                   </span>
                 </label>
@@ -173,14 +178,16 @@ export default function LoginPage() {
         ) : (
           <>
             <div className="auth-header">
-              <div className="auth-brand-icon">📱</div>
+              <div className="auth-brand-icon">
+                <Smartphone size={36} />
+              </div>
               <h2>Verificación en Dos Pasos</h2>
               <p>Ingresa el código de 6 dígitos de tu app <strong>Bóveda Authenticator</strong> o un código de recuperación</p>
             </div>
 
             {error && (
               <div className="alert-banner error">
-                <span>⚠️</span>
+                <AlertTriangle size={18} style={{ flexShrink: 0 }} />
                 <p>{error}</p>
               </div>
             )}
@@ -212,7 +219,9 @@ export default function LoginPage() {
                     className="trust-checkbox"
                   />
                   <span className="trust-label-text">
-                    <strong>🛡️ Recordar y confiar en este dispositivo</strong>
+                    <strong style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <ShieldCheck size={16} /> Recordar y confiar en este dispositivo
+                    </strong>
                     <small>Mantener este equipo como terminal autorizada</small>
                   </span>
                 </label>

@@ -1,9 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import {
+  LockOpen,
+  Lock,
+  X,
+  AlertTriangle,
+  CheckCircle2,
+  ShieldCheck,
+  Zap,
+  KeyRound,
+} from 'lucide-react';
+import {
   hasActiveVaultSession,
   openVaultSession,
   getVault,
   unlockVault,
+  clearVaultSession,
 } from '../services/vaultService';
 
 export default function UnlockVaultModal({ isOpen, vault, onClose, onUnlocked }) {
@@ -65,6 +76,7 @@ export default function UnlockVaultModal({ isOpen, vault, onClose, onUnlocked })
       setCryptoStep('Bóveda descifrada en memoria local.');
       onUnlocked?.(decrypted);
     } catch (err) {
+      clearVaultSession();
       console.error('Error al desbloquear bóveda:', err);
       setError(err.message || 'Error al desbloquear la bóveda. Verifica la contraseña maestra.');
       setCryptoStep('');
@@ -79,7 +91,7 @@ export default function UnlockVaultModal({ isOpen, vault, onClose, onUnlocked })
         {/* Header */}
         <div className="modal-header">
           <div className="modal-title-group">
-            <span className="modal-icon">{decryptedResult ? '🔓' : '🔐'}</span>
+            <span className="modal-icon">{decryptedResult ? <LockOpen size={20} /> : <Lock size={20} />}</span>
             <div>
               <h3>
                 {decryptedResult
@@ -93,7 +105,7 @@ export default function UnlockVaultModal({ isOpen, vault, onClose, onUnlocked })
           </div>
           {!loading && (
             <button className="modal-close-btn" onClick={onClose} aria-label="Cerrar">
-              ✕
+              <X size={18} />
             </button>
           )}
         </div>
@@ -101,7 +113,7 @@ export default function UnlockVaultModal({ isOpen, vault, onClose, onUnlocked })
         {/* Notificaciones */}
         {error && (
           <div className="alert-banner error" style={{ marginBottom: '1rem' }}>
-            <span>⚠️</span>
+            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
             <p>{error}</p>
           </div>
         )}
@@ -110,7 +122,7 @@ export default function UnlockVaultModal({ isOpen, vault, onClose, onUnlocked })
         {decryptedResult ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div className="alert-banner success">
-              <span>✅</span>
+              <CheckCircle2 size={18} color="#34d399" style={{ flexShrink: 0 }} />
               <div>
                 <strong>Bóveda descifrada exitosamente en memoria local.</strong>
                 <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.78rem' }}>
@@ -149,13 +161,13 @@ export default function UnlockVaultModal({ isOpen, vault, onClose, onUnlocked })
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem' }}>
                 <span className="permission-tag" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399' }}>
-                  🛡️ AES-256-GCM
+                  <ShieldCheck size={12} /> AES-256-GCM
                 </span>
                 <span className="permission-tag" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#93c5fd' }}>
-                  ⚡ Argon2id (64 MB)
+                  <Zap size={12} /> Argon2id (64 MB)
                 </span>
                 <span className="permission-tag" style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#c4b5fd' }}>
-                  🔑 Ed25519 Signed
+                  <KeyRound size={12} /> Ed25519 Signed
                 </span>
               </div>
             </div>
@@ -171,7 +183,7 @@ export default function UnlockVaultModal({ isOpen, vault, onClose, onUnlocked })
           <form onSubmit={handleUnlock}>
             {/* Banner Zero-Knowledge */}
             <div className="device-zk-banner" style={{ marginBottom: '1rem' }}>
-              <div className="zk-icon">🔒</div>
+              <div className="zk-icon"><Lock size={22} color="#60a5fa" /></div>
               <div className="zk-text">
                 Ingresa tu contraseña maestra para descifrar la clave simétrica de la bóveda localmente mediante Argon2id.
               </div>
@@ -189,7 +201,7 @@ export default function UnlockVaultModal({ isOpen, vault, onClose, onUnlocked })
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                  <span style={{ fontSize: '1rem' }}>🔑</span>
+                  <KeyRound size={16} color="#93c5fd" />
                   <strong style={{ fontSize: '0.82rem', color: '#93c5fd' }}>
                     Sesión de Bóvedas Expirada (Requiere TOTP)
                   </strong>
@@ -284,7 +296,7 @@ export default function UnlockVaultModal({ isOpen, vault, onClose, onUnlocked })
                 className="btn btn-primary"
                 disabled={loading || !masterPassword}
               >
-                {loading ? 'Descifrando...' : '🔓 Desbloquear y Descifrar'}
+                {loading ? 'Descifrando...' : <><LockOpen size={15} /> Desbloquear y Descifrar</>}
               </button>
             </div>
           </form>

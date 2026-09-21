@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getAuditEvents, getAuditStats, downloadAuditCsv } from '../services/auditService';
+import { Download, Search, AlertTriangle, ScrollText, X, ShieldCheck, ScanSearch } from 'lucide-react';
+import { createComplianceReport, downloadComplianceReport, getAuditEvents, getAuditStats, getComplianceReports, getLocalAnomalyRuns, runLocalAnomalyAnalysis, verifyAuditChain } from '../services/auditService';
 
 export default function AuditPage() {
   const [events, setEvents] = useState([]);
@@ -8,7 +9,12 @@ export default function AuditPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
+  const [reportGenerating, setReportGenerating] = useState(false);
+  const [reports, setReports] = useState([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [reportFormat, setReportFormat] = useState('json');
+  const [reportStart, setReportStart] = useState(() => new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10));
+  const [reportEnd, setReportEnd] = useState(() => new Date().toISOString().slice(0, 10));
   const [error, setError] = useState(null);
 
   // Filtros
@@ -16,6 +22,9 @@ export default function AuditPage() {
   const [tipoEvento, setTipoEvento] = useState('');
   const [resultado, setResultado] = useState('');
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [integrity, setIntegrity] = useState(null);
+  const [analysisRuns, setAnalysisRuns] = useState([]);
+  const [analysing, setAnalysing] = useState(false);
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -57,24 +66,72 @@ export default function AuditPage() {
     fetchStats();
   }, []);
 
+  useEffect(() => {
+    fetchReports();
+  }, []);
+
+  const fetchIntegrity = async () => {
+    try {
+      setIntegrity(await verifyAuditChain());
+    } catch (err) {
+      setError(err.response?.data?.detail || 'No se pudo verificar la cadena de auditoría.');
+    }
+  };
+
+  const fetchAnalysisRuns = async () => {
+    try {
+      setAnalysisRuns(await getLocalAnomalyRuns());
+    } catch (err) {
+      setError(err.response?.data?.detail || 'No se pudieron cargar los análisis locales.');
+    }
+  };
+
+  const fetchReports = async () => {
+    setReportsLoading(true);
+    try {
+      setReports(await getComplianceReports());
+    } catch (err) {
+      setError(err.response?.data?.detail || 'No se pudieron cargar los reportes de cumplimiento.');
+    } finally {
+      setReportsLoading(false);
+    }
+  };
+
+  const handleAnalysis = async () => {
+    setAnalysing(true);
+    try {
+      await runLocalAnomalyAnalysis();
+      await fetchAnalysisRuns();
+      await fetchIntegrity();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'No se pudo ejecutar el análisis local.');
+    } finally {
+      setAnalysing(false);
+    }
+  };
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     setPage(1);
     fetchEvents();
   };
 
-  const handleExport = async () => {
-    setExporting(true);
+  const handleGenerateReport = async () => {
+    setReportGenerating(true);
+    setError(null);
     try {
-      const params = {};
-      if (searchQuery.trim()) params.query = searchQuery.trim();
-      if (tipoEvento) params.tipo_evento = tipoEvento;
-      if (resultado) params.resultado = resultado;
-      await downloadAuditCsv(params);
+      await createComplianceReport({
+        fecha_inicio: `${reportStart}T00:00:00Z`,
+        fecha_fin: `${reportEnd}T23:59:59Z`,
+        tipo_evento: tipoEvento || null,
+        resultado: resultado || null,
+        formato: reportFormat,
+      });
+      await fetchReports();
     } catch (err) {
-      alert('Error al exportar bitácora.');
+      setError(err.response?.data?.detail || 'No se pudo generar el reporte seguro.');
     } finally {
-      setExporting(false);
+      setReportGenerating(false);
     }
   };
 
@@ -102,15 +159,56 @@ export default function AuditPage() {
             Registro continuo e inmutable de eventos de seguridad, accesos y operaciones.
           </p>
         </div>
-        <button
-          type="button"
-          className="btn btn-secondary btn-export"
-          onClick={handleExport}
-          disabled={exporting || loading}
-        >
-          {exporting ? 'Descargando...' : '📥 Exportar CSV'}
+        <button type="button" className="btn btn-secondary btn-export" onClick={fetchReports}>
+          Ver reportes seguros
         </button>
       </div>
+
+      <div className="audit-filters-bar" style={{ marginBottom: '1rem' }}>
+        <div>
+          <strong>Integridad de cadena: </strong>
+          {integrity ? (integrity.status === 'VALID' ? `VÁLIDA (${integrity.checked_events} eventos)` : `INVÁLIDA en secuencia ${integrity.first_invalid_sequence}`) : 'Sin verificar'}
+        </div>
+        <div className="select-filters-group">
+          <button type="button" className="btn btn-secondary btn-sm" onClick={fetchIntegrity} disabled={loading}>
+            <ShieldCheck size={15} /> Verificar cadena
+          </button>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={handleAnalysis} disabled={analysing}>
+            <ScanSearch size={15} /> {analysing ? 'Analizando...' : 'Análisis local'}
+          </button>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={fetchAnalysisRuns}>
+            Ver análisis
+          </button>
+        </div>
+      </div>
+
+      {analysisRuns.length > 0 && (
+        <div className="alert-banner" style={{ marginBottom: '1.5rem' }}>
+          <p>Último análisis local: {analysisRuns[0].estado} · {analysisRuns[0].total_eventos} eventos · {analysisRuns[0].hallazgos?.filter((item) => item.etiqueta === 'ANOMALIA').length || 0} anomalías. No se envían datos fuera del sistema.</p>
+        </div>
+      )}
+
+      <section className="audit-table-card" style={{ marginBottom: '1.5rem', padding: '1rem' }} aria-labelledby="reportes-cumplimiento">
+        <h3 id="reportes-cumplimiento">Reportes de cumplimiento</h3>
+        <p className="section-subtitle">Solo incluye agregados y referencias aprobadas; no exporta eventos ni metadatos sensibles.</p>
+        <div className="select-filters-group" style={{ marginBottom: '1rem' }}>
+          <label>Desde <input className="input-control" type="date" value={reportStart} onChange={(e) => setReportStart(e.target.value)} /></label>
+          <label>Hasta <input className="input-control" type="date" value={reportEnd} onChange={(e) => setReportEnd(e.target.value)} /></label>
+          <label>Formato <select className="input-control select-control" value={reportFormat} onChange={(e) => setReportFormat(e.target.value)}><option value="json">JSON</option><option value="csv">CSV</option></select></label>
+          <button type="button" className="btn btn-primary btn-sm" onClick={handleGenerateReport} disabled={reportGenerating || !reportStart || !reportEnd}>
+            {reportGenerating ? 'Generando...' : 'Generar reporte'}
+          </button>
+        </div>
+        {reportsLoading ? (
+          <p className="text-dim">Cargando reportes de cumplimiento...</p>
+        ) : reports.length === 0 ? (
+          <p className="text-dim">No hay reportes generados para descargar.</p>
+        ) : (
+          <div className="table-responsive"><table className="audit-table"><thead><tr><th>Generado</th><th>Periodo</th><th>Versión</th><th>Eventos</th><th>Descarga</th></tr></thead><tbody>
+            {reports.map((report) => <tr key={report.id_reporte}><td>{new Date(report.fecha_generacion).toLocaleString('es-ES')}</td><td>{report.filtros.fecha_inicio.slice(0, 10)} a {report.filtros.fecha_fin.slice(0, 10)}</td><td>{report.version}</td><td>{report.resumen.event_counts.total}</td><td><button type="button" className="btn btn-secondary btn-xs" onClick={() => downloadComplianceReport(report.id_reporte, reportFormat)}><Download size={14} /> Descargar</button></td></tr>)}
+          </tbody></table></div>
+        )}
+      </section>
 
       {/* Tarjetas de Estadísticas Rápidas */}
       {stats && (
@@ -145,7 +243,7 @@ export default function AuditPage() {
             className="input-control search-input"
           />
           <button type="submit" className="btn btn-secondary btn-sm">
-            🔍 Buscar
+            <Search size={15} /> Buscar
           </button>
         </form>
 
@@ -185,7 +283,7 @@ export default function AuditPage() {
 
       {error && (
         <div className="alert-banner error" style={{ marginBottom: '1.5rem' }}>
-          <span>⚠️</span>
+          <AlertTriangle size={18} style={{ flexShrink: 0 }} />
           <p>{error}</p>
         </div>
       )}
@@ -308,11 +406,13 @@ export default function AuditPage() {
           <div className="modal-card audit-detail-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div className="modal-title-group">
-                <span className="modal-icon">📜</span>
+                <span className="modal-icon">
+                  <ScrollText size={20} />
+                </span>
                 <h3>Detalle del Evento de Auditoría</h3>
               </div>
               <button className="modal-close-btn" onClick={() => setSelectedEvent(null)}>
-                ✕
+                <X size={18} />
               </button>
             </div>
 

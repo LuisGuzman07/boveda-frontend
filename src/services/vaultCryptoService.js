@@ -15,6 +15,10 @@ const STORAGE_KEYS = {
   DEVICE_WRAPPING: 'boveda_device_wrapping_key',
 };
 
+// Vault keys are session material only. Device identity persistence below is a
+// development browser convenience, not a hardware-security boundary.
+let activeVaultKey = null;
+
 // -------------------------------------------------------------
 // Base64 & ArrayBuffer Helpers
 // -------------------------------------------------------------
@@ -93,6 +97,73 @@ export function signWithDeviceKey(messageBytes) {
   const { secretKey } = getOrCreateDeviceSigningKey();
   const signature = nacl.sign.detached(messageBytes, secretKey);
   return toBase64(signature);
+}
+
+export async function sha256HexBytes(bytes) {
+  const digest = await window.crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function safeDownloadName(name) {
+  const cleaned = String(name || 'download.bin')
+    .replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_')
+    .trim()
+    .replace(/^\.+$/, 'download.bin');
+  return cleaned.slice(0, 180) || 'download.bin';
+}
+
+export async function decryptDownloadedFile({ download, metadata, vaultId }) {
+  if (!activeVaultKey) throw new Error('La bóveda debe estar desbloqueada.');
+  const ciphertext = fromBase64(download.ciphertext);
+  const actualHash = await sha256HexBytes(ciphertext);
+  if (actualHash !== String(download.hash_cifrado).toLowerCase()) {
+    ciphertext.fill(0);
+    throw new Error('La verificación SHA-256 del ciphertext falló.');
+  }
+
+  let fileKey = null;
+  try {
+    fileKey = await decryptAesGcm(
+      download.clave_archivo_envuelta,
+      activeVaultKey,
+      `${vaultId}:file-key:${download.id_version_archivo}:v1`,
+    );
+    const plaintext = await decryptAesGcm(
+      {
+        algoritmo: download.algoritmo,
+        ciphertext: download.ciphertext,
+        nonce: download.nonce_iv,
+        tag: download.auth_tag,
+      },
+      fileKey,
+      `${vaultId}:file:${download.id_version_archivo}:v1`,
+    );
+    let filename = 'download.bin';
+    if (metadata?.nombre_cifrado) {
+      const nameBytes = await decryptAesGcm(
+        metadata.nombre_cifrado,
+        fileKey,
+        `${vaultId}:filename:${download.id_version_archivo}:v1`,
+      );
+      filename = safeDownloadName(new TextDecoder().decode(nameBytes));
+      nameBytes.fill(0);
+    }
+    return { plaintext, filename };
+  } finally {
+    ciphertext.fill(0);
+    if (fileKey) fileKey.fill(0);
+  }
+}
+
+export function clearActiveVaultKey() {
+  if (activeVaultKey) activeVaultKey.fill(0);
+  activeVaultKey = null;
+}
+
+export function hasActiveVaultKey() {
+  return activeVaultKey !== null;
 }
 
 // -------------------------------------------------------------
@@ -203,6 +274,68 @@ export async function deriveArgon2idKey(password, saltBytes) {
   });
 }
 
+export async function createEmergencyKitPayload({ vaultId, vaultKdfSalt, recoveryPassword }) {
+  if (!activeVaultKey) throw new Error('La bóveda debe estar desbloqueada.');
+  if (!recoveryPassword || recoveryPassword.length < 12) {
+    throw new Error('La contraseña del Emergency Kit debe tener al menos 12 caracteres.');
+  }
+  const salt = randomBytes(16);
+  const derivedKey = await deriveArgon2idKey(recoveryPassword, salt);
+  try {
+    const envelope = await encryptAesGcm(activeVaultKey, derivedKey, `${vaultId}:emergency-kit:v1`);
+    const fingerprintSource = JSON.stringify({
+      version_kit: 1,
+      version_criptografica: 1,
+      kdf_salt: toBase64(salt),
+      kdf_parametros: KDF_PARAMETERS,
+      sobre_cifrado: envelope,
+    });
+    return {
+      id_kit: generateUUID(),
+      id_boveda: vaultId,
+      version_kit: 1,
+      version_criptografica: 1,
+      kdf_salt: toBase64(salt),
+      kdf_salt_boveda: vaultKdfSalt,
+      kdf_parametros: KDF_PARAMETERS,
+      sobre_cifrado: envelope,
+      huella_kit: await sha256Hex(fingerprintSource),
+      expira_en_dias: 365,
+    };
+  } finally {
+    derivedKey.fill(0);
+  }
+}
+
+export async function prepareEmergencyRecovery({ kit, vault, recoveryPassword, deviceId, userId }) {
+  if (kit.version_kit !== 1 || kit.version_criptografica !== 1) {
+    throw new Error('Versión de Emergency Kit no compatible.');
+  }
+  const kitKey = await deriveArgon2idKey(recoveryPassword, fromBase64(kit.kdf_salt));
+  let vaultKey = null;
+  let derivedVaultPassword = null;
+  try {
+    vaultKey = await decryptAesGcm(kit.sobre_cifrado, kitKey, `${vault.id_boveda}:emergency-kit:v1`);
+    derivedVaultPassword = await deriveArgon2idKey(recoveryPassword, fromBase64(vault.kdf_salt));
+    const passwordEnvelope = await encryptAesGcm(vaultKey, derivedVaultPassword, `${vault.id_boveda}:password:v1`);
+    const deviceKey = getOrCreateDeviceWrappingKey(userId);
+    try {
+      const outer = await encryptAesGcm(
+        new TextEncoder().encode(JSON.stringify(passwordEnvelope)),
+        deviceKey,
+        `${vault.id_boveda}:${deviceId}:device:v1`,
+      );
+      return { id_kit: kit.id_kit, id_dispositivo: deviceId, clave_envuelta: { ...outer, id_dispositivo: deviceId, version_clave: 1 } };
+    } finally {
+      deviceKey.fill(0);
+    }
+  } finally {
+    kitKey.fill(0);
+    if (vaultKey) vaultKey.fill(0);
+    if (derivedVaultPassword) derivedVaultPassword.fill(0);
+  }
+}
+
 // -------------------------------------------------------------
 // CU-06: Create Vault Payload Preparation
 // -------------------------------------------------------------
@@ -256,6 +389,7 @@ export async function prepareVaultPayload({ name, description, masterPassword, d
 // CU-06: Local Vault Reopening / Decryption
 // -------------------------------------------------------------
 export async function unlockVaultLocally({ vault, masterPassword, deviceId, userId }) {
+  clearActiveVaultKey();
   if (vault.version_criptografica !== 1) {
     throw new Error('Versión criptográfica de bóveda no compatible');
   }
@@ -292,16 +426,50 @@ export async function unlockVaultLocally({ vault, masterPassword, deviceId, user
       description = decoder.decode(descBytes);
     }
 
+    activeVaultKey = new Uint8Array(vaultKey);
     return {
       id_boveda: vaultId,
       name,
       description,
       unlockedAt: Date.now(),
-      vaultKeyBytes: vaultKey,
     };
   } catch (err) {
+    clearActiveVaultKey();
     throw new Error('Contraseña maestra incorrecta o datos corrompidos.');
   } finally {
     derivedKey.fill(0);
+    if (vaultKey) vaultKey.fill(0);
+  }
+}
+
+// CU-08: the per-version key is wrapped by the in-memory vault key. The
+// backend receives the wrapped key, never the vault key or the file key.
+export async function encryptFileWithActiveVaultKey({ file, vaultId }) {
+  if (!activeVaultKey) throw new Error('La bóveda debe estar desbloqueada.');
+  const versionId = generateUUID();
+  const fileId = generateUUID();
+  const fileKey = randomBytes(32);
+  const fileBytes = new Uint8Array(await file.arrayBuffer());
+  try {
+    const content = await encryptAesGcm(fileBytes, fileKey, `${vaultId}:file:${versionId}:v1`);
+    const wrappedKey = await encryptAesGcm(fileKey, activeVaultKey, `${vaultId}:file-key:${versionId}:v1`);
+    const encryptedName = await encryptAesGcm(
+      new TextEncoder().encode(file.name),
+      fileKey,
+      `${vaultId}:filename:${versionId}:v1`,
+    );
+    const ciphertextBytes = fromBase64(content.ciphertext);
+    return {
+      id_archivo: fileId,
+      id_version_archivo: versionId,
+      nombre_cifrado: encryptedName,
+      contenido_cifrado: content,
+      clave_archivo_envuelta: wrappedKey,
+      tamano_cifrado: ciphertextBytes.length + fromBase64(content.tag).length,
+      hash_cifrado: await sha256HexBytes(ciphertextBytes),
+    };
+  } finally {
+    fileKey.fill(0);
+    fileBytes.fill(0);
   }
 }

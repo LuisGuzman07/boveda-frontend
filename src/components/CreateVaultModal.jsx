@@ -1,4 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Archive,
+  X,
+  AlertTriangle,
+  CheckCircle2,
+  ShieldCheck,
+  KeyRound,
+  Lock,
+} from 'lucide-react';
 import { hasActiveVaultSession, openVaultSession, createVault } from '../services/vaultService';
 
 export default function CreateVaultModal({ isOpen, onClose, onSuccess }) {
@@ -113,7 +122,7 @@ export default function CreateVaultModal({ isOpen, onClose, onSuccess }) {
         {/* Header */}
         <div className="modal-header">
           <div className="modal-title-group">
-            <span className="modal-icon">🗄️</span>
+            <span className="modal-icon"><Archive size={20} /></span>
             <div>
               <h3>Nueva Bóveda Cifrada (CU-06)</h3>
               <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -123,7 +132,7 @@ export default function CreateVaultModal({ isOpen, onClose, onSuccess }) {
           </div>
           {!loading && (
             <button className="modal-close-btn" onClick={onClose} aria-label="Cerrar">
-              ✕
+              <X size={18} />
             </button>
           )}
         </div>
@@ -131,20 +140,20 @@ export default function CreateVaultModal({ isOpen, onClose, onSuccess }) {
         {/* Notificaciones */}
         {error && (
           <div className="alert-banner error" style={{ marginBottom: '1rem' }}>
-            <span>⚠️</span>
+            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
             <p>{error}</p>
           </div>
         )}
         {success && (
           <div className="alert-banner success" style={{ marginBottom: '1rem' }}>
-            <span>✅</span>
+            <CheckCircle2 size={18} color="#34d399" style={{ flexShrink: 0 }} />
             <p>{success}</p>
           </div>
         )}
 
         {/* Banner Zero-Knowledge */}
         <div className="device-zk-banner" style={{ marginBottom: '1.25rem' }}>
-          <div className="zk-icon">🛡️</div>
+          <div className="zk-icon"><ShieldCheck size={22} color="#60a5fa" /></div>
           <div className="zk-text">
             <strong>Arquitectura de Cero Conocimiento:</strong> El nombre, la descripción y la clave maestra de la bóveda se cifran 100% en tu navegador antes de transmitirse. El servidor nunca recibe contraseñas ni contenido en texto claro.
           </div>
@@ -192,7 +201,7 @@ export default function CreateVaultModal({ isOpen, onClose, onSuccess }) {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '1.1rem' }}>🔑</span>
+                <KeyRound size={18} color="#93c5fd" />
                 <strong style={{ fontSize: '0.85rem', color: '#93c5fd' }}>
                   Autorización de Bóveda Requerida (TOTP 2FA)
                 </strong>
@@ -338,7 +347,7 @@ export default function CreateVaultModal({ isOpen, onClose, onSuccess }) {
               className="btn btn-primary"
               disabled={loading || masterPassword.length < 12}
             >
-              {loading ? 'Cifrando Bóveda...' : '🔒 Cifrar y Crear Bóveda'}
+              {loading ? 'Cifrando Bóveda...' : <><Lock size={15} /> Cifrar y Crear Bóveda</>}
             </button>
           </div>
         </form>

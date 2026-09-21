@@ -1,5 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  ShieldCheck,
+  AlertTriangle,
+  Settings,
+  Lock,
+  Laptop,
+  ShieldAlert,
+  Archive,
+  FolderArchive,
+  KeyRound,
+  ScrollText,
+  Users,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getMfaStatus } from '../services/authService';
 import { listDevices, getOrCreateDeviceId } from '../services/deviceService';
@@ -7,10 +20,12 @@ import MfaModal from '../components/MfaModal';
 import TrustedDevicesModal from '../components/TrustedDevicesModal';
 import AdminDevicesModal from '../components/AdminDevicesModal';
 import SecurityPoliciesModal from '../components/SecurityPoliciesModal';
+import AdminUsersModal from '../components/AdminUsersModal';
 
 export default function DashboardPage() {
   const { user, roles, permissions } = useAuth();
   const isAdmin = roles.includes('Administrador');
+  const canAdminUsers = permissions.includes('users:read');
   const [mfaStatus, setMfaStatus] = useState({ mfa_enabled: false, tipo: null });
   const [mfaModalOpen, setMfaModalOpen] = useState(false);
   const [loadingMfa, setLoadingMfa] = useState(true);
@@ -26,6 +41,7 @@ export default function DashboardPage() {
 
   // CU-17: Políticas de Seguridad Globales
   const [policiesModalOpen, setPoliciesModalOpen] = useState(false);
+  const [adminUsersModalOpen, setAdminUsersModalOpen] = useState(false);
 
   const fetchMfaStatus = async () => {
     try {
@@ -146,33 +162,42 @@ export default function DashboardPage() {
               <span className="row-label">Dispositivo Actual (CU-04)</span>
               <span className="row-value">
                 {currentDeviceTrusted ? (
-                  <span className="badge-success-text" style={{ fontWeight: 600 }}>
-                    🛡️ Confiable ({currentDeviceName})
+                  <span className="badge-success-text" style={{ fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <ShieldCheck size={16} /> Confiable ({currentDeviceName})
                   </span>
                 ) : (
-                  <span style={{ color: '#fbbf24', fontWeight: 600 }}>
-                    ⚠️ No Confiable ({currentDeviceName})
+                  <span style={{ color: '#fbbf24', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <AlertTriangle size={16} /> No Confiable ({currentDeviceName})
                   </span>
                 )}
               </span>
             </div>
           </div>
           <div style={{ marginTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-            <button
+                 <button
               type="button"
               className={`btn btn-block ${
                 isMfaActive ? 'btn-secondary' : 'btn-primary'
               }`}
               onClick={() => setMfaModalOpen(true)}
             >
-              {isMfaActive ? '⚙️ Desactivar 2FA' : '🔒 Configurar 2FA con App Móvil'}
-            </button>
+              {isMfaActive ? (
+                <>
+                  <Settings size={16} /> Desactivar 2FA
+                </>
+              ) : (
+                <>
+                  <Lock size={16} /> Configurar 2FA con App Móvil
+                </>
+              )}
+                  </button>
+                {canAdminUsers && <button type="button" className="btn btn-block btn-admin-action" onClick={() => setAdminUsersModalOpen(true)}><Users size={16} /> Administrar usuarios y roles (CU-16)</button>}
             <button
               type="button"
               className="btn btn-secondary btn-block"
               onClick={() => setDevicesModalOpen(true)}
             >
-              💻 Gestionar Dispositivos de Confianza ({devicesCount})
+              <Laptop size={16} /> Gestionar Dispositivos de Confianza ({devicesCount})
             </button>
             {isAdmin && (
               <>
@@ -181,7 +206,7 @@ export default function DashboardPage() {
                   className="btn btn-block btn-admin-action"
                   onClick={() => setAdminDevicesModalOpen(true)}
                 >
-                  🚨 Control Global de Terminales (CU-05)
+                  <ShieldAlert size={16} /> Control Global de Terminales (CU-05)
                 </button>
                 <button
                   type="button"
@@ -189,7 +214,7 @@ export default function DashboardPage() {
                   onClick={() => setPoliciesModalOpen(true)}
                   style={{ border: '1px solid rgba(59, 130, 246, 0.4)', color: '#93c5fd' }}
                 >
-                  🛡️ Políticas de Seguridad Globales (CU-17)
+                  <ShieldCheck size={16} /> Políticas de Seguridad Globales (CU-17)
                 </button>
               </>
             )}
@@ -227,13 +252,17 @@ export default function DashboardPage() {
             className="deck-card deck-card-clickable"
             style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
           >
-            <div className="deck-icon">🗄️</div>
+            <div className="deck-icon">
+              <Archive size={32} />
+            </div>
             <h4>Bóvedas (CU-06)</h4>
             <p>Repositorios cifrados con Cero Conocimiento (AES-256-GCM + Argon2id).</p>
           </Link>
 
           <div className="deck-card">
-            <div className="deck-icon">📁</div>
+            <div className="deck-icon">
+              <FolderArchive size={32} />
+            </div>
             <h4>Archivos</h4>
             <p>Carga, versionado y control de acceso de documentos.</p>
           </div>
@@ -243,13 +272,17 @@ export default function DashboardPage() {
             onClick={() => setDevicesModalOpen(true)}
             style={{ cursor: 'pointer' }}
           >
-            <div className="deck-icon">🔐</div>
+            <div className="deck-icon">
+              <KeyRound size={32} />
+            </div>
             <h4>Seguridad & Dispositivos</h4>
             <p>Gestión de claves, hardware local y dispositivos de confianza (CU-04).</p>
           </div>
 
           <Link to="/audit" className="deck-card deck-card-clickable" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div className="deck-icon">📜</div>
+            <div className="deck-icon">
+              <ScrollText size={32} />
+            </div>
             <h4>Auditoría</h4>
             <p>Registro continuo e inmutable de eventos de seguridad.</p>
           </Link>
@@ -283,6 +316,7 @@ export default function DashboardPage() {
         isOpen={policiesModalOpen}
         onClose={() => setPoliciesModalOpen(false)}
       />
+      <AdminUsersModal isOpen={adminUsersModalOpen} onClose={() => setAdminUsersModalOpen(false)} permissions={permissions} />
     </div>
   );
 }

@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
+  Laptop,
+  Smartphone,
+  Globe,
+  X,
+  AlertTriangle,
+  CheckCircle2,
+  Lock,
+  ShieldCheck,
+  Trash2,
+} from 'lucide-react';
+import {
   listDevices,
   setDeviceTrust,
   revokeDeviceTrust,
@@ -109,7 +120,7 @@ export default function TrustedDevicesModal({ isOpen, onClose, onDeviceUpdated }
         {/* Header */}
         <div className="modal-header">
           <div className="modal-title-group">
-            <span className="modal-icon">💻</span>
+            <span className="modal-icon"><Laptop size={20} /></span>
             <div>
               <h3>Dispositivos de Confianza (CU-04)</h3>
               <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -118,27 +129,27 @@ export default function TrustedDevicesModal({ isOpen, onClose, onDeviceUpdated }
             </div>
           </div>
           <button className="modal-close-btn" onClick={onClose} aria-label="Cerrar modal">
-            ✕
+            <X size={18} />
           </button>
         </div>
 
         {/* Notificaciones */}
         {error && (
           <div className="alert-banner error" style={{ marginBottom: '1rem' }}>
-            <span>⚠️</span>
+            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
             <p>{error}</p>
           </div>
         )}
         {successMsg && (
           <div className="alert-banner success" style={{ marginBottom: '1rem' }}>
-            <span>✅</span>
+            <CheckCircle2 size={18} color="#34d399" style={{ flexShrink: 0 }} />
             <p>{successMsg}</p>
           </div>
         )}
 
         {/* Banner Zero-Knowledge */}
         <div className="device-zk-banner">
-          <div className="zk-icon">🔒</div>
+          <div className="zk-icon"><Lock size={22} color="#60a5fa" /></div>
           <div className="zk-text">
             <strong>Garantía de Cero Conocimiento:</strong> Marcar un dispositivo como confiable autoriza el hardware para el acceso al sistema sin comprometer tus claves maestras de cifrado, las cuales nunca salen de tu almacenamiento local.
           </div>
@@ -158,7 +169,7 @@ export default function TrustedDevicesModal({ isOpen, onClose, onDeviceUpdated }
                 className="btn btn-primary btn-sm"
                 onClick={handleRegisterCurrentAsTrusted}
               >
-                🛡️ Registrar este dispositivo como de confianza
+                <ShieldCheck size={14} /> Registrar este dispositivo como de confianza
               </button>
             </div>
           ) : (
@@ -166,7 +177,7 @@ export default function TrustedDevicesModal({ isOpen, onClose, onDeviceUpdated }
               {devices.map((device) => {
                 const isCurrent = Boolean(device.es_dispositivo_actual || device.identificador_seguro === currentLocalId);
                 const isBusy = actionLoadingId === device.id_dispositivo;
-                const icon = device.tipo === 'MOVIL' ? '📱' : device.tipo === 'DESKTOP' ? '💻' : '🌐';
+                const DeviceIcon = device.tipo === 'MOVIL' ? Smartphone : device.tipo === 'DESKTOP' ? Laptop : Globe;
 
                 return (
                   <div
@@ -174,22 +185,22 @@ export default function TrustedDevicesModal({ isOpen, onClose, onDeviceUpdated }
                     className={`device-item-card ${isCurrent ? 'device-card-current' : ''}`}
                   >
                     <div className="device-card-header">
-                      <div className="device-icon-wrapper">{icon}</div>
+                      <div className="device-icon-wrapper"><DeviceIcon size={20} /></div>
                       <div className="device-main-info">
                         <div className="device-title-row">
                           <h4 className="device-name">{device.nombre || 'Dispositivo sin nombre'}</h4>
                           {isCurrent && (
                             <span className="device-pill-current">
-                              💻 Este Dispositivo (Actual)
+                              <Laptop size={12} /> Este Dispositivo (Actual)
                             </span>
                           )}
                           {device.es_confiable ? (
                             <span className="device-pill-trusted">
-                              🛡️ Confiable
+                              <ShieldCheck size={12} /> Confiable
                             </span>
                           ) : (
                             <span className="device-pill-untrusted">
-                              ⚠️ No Confiable
+                              <AlertTriangle size={12} /> No Confiable
                             </span>
                           )}
                         </div>
@@ -221,8 +232,8 @@ export default function TrustedDevicesModal({ isOpen, onClose, onDeviceUpdated }
                         {isBusy
                           ? 'Actualizando...'
                           : device.es_confiable
-                          ? '✕ Revocar Confianza'
-                          : '🛡️ Autorizar como Confiable'}
+                          ? <><X size={13} /> Revocar Confianza</>
+                          : <><ShieldCheck size={13} /> Autorizar como Confiable</>}
                       </button>
 
                       {!isCurrent && (
@@ -232,7 +243,7 @@ export default function TrustedDevicesModal({ isOpen, onClose, onDeviceUpdated }
                           onClick={() => handleDeleteDevice(device)}
                           disabled={isBusy}
                         >
-                          🗑️ Desvincular
+                          <Trash2 size={13} /> Desvincular
                         </button>
                       )}
                     </div>
@@ -252,7 +263,7 @@ export default function TrustedDevicesModal({ isOpen, onClose, onDeviceUpdated }
               onClick={() => handleToggleTrust(currentDevice)}
               disabled={actionLoadingId === currentDevice.id_dispositivo}
             >
-              🛡️ Autorizar este equipo como de confianza
+              <ShieldCheck size={14} /> Autorizar este equipo como de confianza
             </button>
           )}
           <div style={{ marginLeft: 'auto' }}>

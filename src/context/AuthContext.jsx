@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { loginUser, registerUser, verifyLoginMfa, getMe, logoutUser } from '../services/authService';
+import { clearVaultSession } from '../services/vaultService';
 
 const AuthContext = createContext(null);
 
@@ -66,6 +67,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     const refreshToken = localStorage.getItem('refresh_token');
     await logoutUser(refreshToken);
+    clearVaultSession();
     setToken(null);
     setUser(null);
     setRoles([]);

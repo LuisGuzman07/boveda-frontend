@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
@@ -17,7 +18,9 @@ export default function Navbar() {
     <header className="navbar">
       <div className="nav-container">
         <Link to="/" className="nav-brand">
-          <span className="brand-icon">🛡️</span>
+          <span className="brand-icon">
+            <Shield size={22} />
+          </span>
           <span className="brand-name">Bóveda Híbrida</span>
         </Link>
 

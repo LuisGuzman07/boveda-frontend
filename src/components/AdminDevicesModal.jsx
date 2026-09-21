@@ -1,4 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import {
+  ShieldCheck,
+  AlertTriangle,
+  CheckCircle2,
+  Zap,
+  CheckCircle,
+  Ban,
+  Smartphone,
+  Laptop,
+  Globe,
+  ShieldAlert,
+  X,
+} from 'lucide-react';
 import { listAllDevicesAdmin, revokeDeviceAdmin } from '../services/deviceService';
 
 export default function AdminDevicesModal({ isOpen, onClose, onDeviceRevoked }) {
@@ -82,7 +95,9 @@ export default function AdminDevicesModal({ isOpen, onClose, onDeviceRevoked }) 
         {/* Header */}
         <div className="modal-header">
           <div className="modal-title-group">
-            <span className="modal-icon">🛡️</span>
+            <span className="modal-icon">
+              <ShieldCheck size={20} />
+            </span>
             <div>
               <h3>Control Global de Terminales (CU-05)</h3>
               <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -91,27 +106,29 @@ export default function AdminDevicesModal({ isOpen, onClose, onDeviceRevoked }) 
             </div>
           </div>
           <button className="modal-close-btn" onClick={onClose} aria-label="Cerrar modal">
-            ✕
+            <X size={18} />
           </button>
         </div>
 
         {/* Notificaciones */}
         {error && (
           <div className="alert-banner error" style={{ marginBottom: '1rem' }}>
-            <span>⚠️</span>
+            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
             <p>{error}</p>
           </div>
         )}
         {successMsg && (
           <div className="alert-banner success" style={{ marginBottom: '1rem' }}>
-            <span>✅</span>
+            <CheckCircle2 size={18} color="#34d399" style={{ flexShrink: 0 }} />
             <p>{successMsg}</p>
           </div>
         )}
 
         {/* Banner de Seguridad Administrativa */}
         <div className="admin-device-alert">
-          <div className="alert-icon">⚡</div>
+          <div className="alert-icon">
+            <Zap size={18} />
+          </div>
           <div className="alert-desc">
             <strong>Revocación en Tiempo Real:</strong> Al revocar una terminal, el sistema invalida inmediatamente el dispositivo y purga todas las sesiones activas asociadas en la base de datos (motivo: <em>REVOCADO_POR_ADMINISTRADOR</em>), auditando el incidente.
           </div>
@@ -145,21 +162,24 @@ export default function AdminDevicesModal({ isOpen, onClose, onDeviceRevoked }) 
               className={`pill-btn ${filterTrust === 'TRUSTED_ONLY' ? 'active' : ''}`}
               onClick={() => setFilterTrust('TRUSTED_ONLY')}
             >
-              🛡️ Confiables
+              <ShieldCheck size={14} style={{ display: 'inline', verticalAlign: '-2px', marginRight: '4px' }} />
+              Confiables
             </button>
             <button
               type="button"
               className={`pill-btn ${filterTrust === 'ACTIVE_ONLY' ? 'active' : ''}`}
               onClick={() => setFilterTrust('ACTIVE_ONLY')}
             >
-              🟢 Activos
+              <CheckCircle size={14} style={{ display: 'inline', verticalAlign: '-2px', marginRight: '4px', color: '#34d399' }} />
+              Activos
             </button>
             <button
               type="button"
               className={`pill-btn ${filterTrust === 'REVOKED_ONLY' ? 'active' : ''}`}
               onClick={() => setFilterTrust('REVOKED_ONLY')}
             >
-              ❌ Revocados
+              <Ban size={14} style={{ display: 'inline', verticalAlign: '-2px', marginRight: '4px', color: '#f87171' }} />
+              Revocados
             </button>
           </div>
         </div>
@@ -186,7 +206,7 @@ export default function AdminDevicesModal({ isOpen, onClose, onDeviceRevoked }) 
                 {devices.map((d) => {
                   const isRevoked = d.estado === 'REVOCADO';
                   const isBusy = actionLoadingId === d.id_dispositivo;
-                  const icon = d.tipo === 'MOVIL' ? '📱' : d.tipo === 'DESKTOP' ? '💻' : '🌐';
+                  const DeviceIcon = d.tipo === 'MOVIL' ? Smartphone : d.tipo === 'DESKTOP' ? Laptop : Globe;
 
                   return (
                     <tr key={d.id_dispositivo} className={isRevoked ? 'row-revoked' : ''}>
@@ -198,7 +218,9 @@ export default function AdminDevicesModal({ isOpen, onClose, onDeviceRevoked }) 
                       </td>
                       <td>
                         <div className="device-cell">
-                          <span>{icon} {d.nombre || 'Terminal Web'}</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <DeviceIcon size={16} /> {d.nombre || 'Terminal Web'}
+                          </span>
                           <small>{d.sistema_operativo} • {d.tipo}</small>
                           <small className="device-id-mono" title={d.identificador_seguro}>
                             {d.identificador_seguro ? `${d.identificador_seguro.substring(0, 12)}...` : ''}
@@ -207,11 +229,17 @@ export default function AdminDevicesModal({ isOpen, onClose, onDeviceRevoked }) 
                       </td>
                       <td>
                         {isRevoked ? (
-                          <span className="device-pill-revoked">❌ Revocado</span>
+                          <span className="device-pill-revoked" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                            <Ban size={12} /> Revocado
+                          </span>
                         ) : d.es_confiable ? (
-                          <span className="device-pill-trusted">🛡️ Confiable</span>
+                          <span className="device-pill-trusted" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                            <ShieldCheck size={12} /> Confiable
+                          </span>
                         ) : (
-                          <span className="device-pill-untrusted">⚠️ No Confiable</span>
+                          <span className="device-pill-untrusted" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                            <AlertTriangle size={12} /> No Confiable
+                          </span>
                         )}
                       </td>
                       <td>
@@ -232,7 +260,13 @@ export default function AdminDevicesModal({ isOpen, onClose, onDeviceRevoked }) 
                             onClick={() => handleOpenRevokePrompt(d)}
                             disabled={isBusy}
                           >
-                            {isBusy ? 'Revocando...' : '🚨 Revocar'}
+                            {isBusy ? (
+                              'Revocando...'
+                            ) : (
+                              <>
+                                <ShieldAlert size={14} /> Revocar
+                              </>
+                            )}
                           </button>
                         )}
                       </td>
@@ -248,12 +282,15 @@ export default function AdminDevicesModal({ isOpen, onClose, onDeviceRevoked }) 
         {revokingDevice && (
           <div className="submodal-overlay" onClick={() => setRevokingDevice(null)}>
             <div className="submodal-card" onClick={(e) => e.stopPropagation()}>
-              <h4>🚨 Confirmar Revocación Inmediata</h4>
+              <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <ShieldAlert size={18} color="#ef4444" /> Confirmar Revocación Inmediata
+              </h4>
               <p>
                 Estás a punto de invalidar la terminal <strong>{revokingDevice.nombre}</strong> del usuario <strong>{revokingDevice.usuario_correo}</strong>.
               </p>
-              <p className="submodal-warning">
-                ⚠️ Todas las sesiones activas en este equipo serán cerradas inmediatamente.
+              <p className="submodal-warning" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <AlertTriangle size={15} color="#fbbf24" style={{ flexShrink: 0 }} />
+                Todas las sesiones activas en este equipo serán cerradas inmediatamente.
               </p>
 
               <div className="form-field" style={{ marginTop: '1rem' }}>

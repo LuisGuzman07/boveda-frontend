@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { UserPlus, AlertTriangle, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function RegisterPage() {
@@ -56,14 +57,16 @@ export default function RegisterPage() {
     <div className="auth-wrapper">
       <div className="auth-card register-card">
         <div className="auth-header">
-          <div className="auth-brand-icon">✨</div>
+          <div className="auth-brand-icon">
+            <UserPlus size={36} />
+          </div>
           <h2>Crear Cuenta</h2>
           <p>Registra un nuevo usuario para acceder a la plataforma</p>
         </div>
 
         {error && (
           <div className="alert-banner error">
-            <span>⚠️</span>
+            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
             <p>{error}</p>
           </div>
         )}
@@ -115,19 +118,19 @@ export default function RegisterPage() {
           <div className="password-rules-box">
             <div className="rules-grid">
               <span className={`rule-item ${hasMinLength ? 'ok' : ''}`}>
-                {hasMinLength ? '✓' : '•'} 8+ caracteres
+                {hasMinLength ? <Check size={13} style={{ display: 'inline', verticalAlign: '-1px' }} /> : '•'} 8+ caracteres
               </span>
               <span className={`rule-item ${hasUpper ? 'ok' : ''}`}>
-                {hasUpper ? '✓' : '•'} Mayúscula
+                {hasUpper ? <Check size={13} style={{ display: 'inline', verticalAlign: '-1px' }} /> : '•'} Mayúscula
               </span>
               <span className={`rule-item ${hasLower ? 'ok' : ''}`}>
-                {hasLower ? '✓' : '•'} Minúscula
+                {hasLower ? <Check size={13} style={{ display: 'inline', verticalAlign: '-1px' }} /> : '•'} Minúscula
               </span>
               <span className={`rule-item ${hasNumber ? 'ok' : ''}`}>
-                {hasNumber ? '✓' : '•'} Número
+                {hasNumber ? <Check size={13} style={{ display: 'inline', verticalAlign: '-1px' }} /> : '•'} Número
               </span>
               <span className={`rule-item ${hasSpecial ? 'ok' : ''}`}>
-                {hasSpecial ? '✓' : '•'} Símbolo (!@#$)
+                {hasSpecial ? <Check size={13} style={{ display: 'inline', verticalAlign: '-1px' }} /> : '•'} Símbolo (!@#$)
               </span>
             </div>
           </div>

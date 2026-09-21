@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import {
+  Archive,
+  Lock,
+  Plus,
+  KeyRound,
+  ShieldCheck,
+  AlertTriangle,
+  LockKeyhole,
+  LockOpen,
+  X,
+  Share2,
+} from 'lucide-react';
+import {
   listVaults,
   hasActiveVaultSession,
   getVaultSessionData,
@@ -8,6 +20,7 @@ import {
 } from '../services/vaultService';
 import CreateVaultModal from '../components/CreateVaultModal';
 import UnlockVaultModal from '../components/UnlockVaultModal';
+import ShareAccessModal from '../components/ShareAccessModal';
 
 export default function VaultsPage() {
   const [vaults, setVaults] = useState([]);
@@ -20,6 +33,7 @@ export default function VaultsPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [unlockModalOpen, setUnlockModalOpen] = useState(false);
   const [selectedVault, setSelectedVault] = useState(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   // Quick TOTP Session Modal
   const [totpModalOpen, setTotpModalOpen] = useState(false);
@@ -139,7 +153,9 @@ export default function VaultsPage() {
       >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.35rem' }}>
-            <span style={{ fontSize: '1.8rem' }}>🗄️</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--primary)' }}>
+              <Archive size={28} />
+            </span>
             <h2 style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
               Bóvedas Cifradas
             </h2>
@@ -165,7 +181,7 @@ export default function VaultsPage() {
                 onClick={handleLockSession}
                 title="Cierra la sesión criptográfica de este dispositivo"
               >
-                🔒 Bloquear Sesión
+                <Lock size={16} /> Bloquear Sesión
               </button>
               <button
                 type="button"
@@ -182,7 +198,7 @@ export default function VaultsPage() {
                 className="btn btn-secondary"
                 onClick={() => setTotpModalOpen(true)}
               >
-                🔑 Abrir Sesión con TOTP
+                <KeyRound size={16} /> Abrir Sesión con TOTP
               </button>
               <button
                 type="button"
@@ -212,7 +228,9 @@ export default function VaultsPage() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span style={{ fontSize: '1.25rem' }}>{hasSession ? '🛡️' : '⚠️'}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+            {hasSession ? <ShieldCheck size={20} color="#34d399" /> : <AlertTriangle size={20} color="#fbbf24" />}
+          </span>
           <div>
             <strong style={{ fontSize: '0.88rem', color: hasSession ? '#34d399' : '#fbbf24' }}>
               {hasSession
@@ -241,7 +259,7 @@ export default function VaultsPage() {
       {/* Error si ocurrió */}
       {error && (
         <div className="alert-banner error" style={{ marginBottom: '1.5rem' }}>
-          <span>⚠️</span>
+          <AlertTriangle size={18} style={{ flexShrink: 0 }} />
           <p>{error}</p>
         </div>
       )}
@@ -273,7 +291,9 @@ export default function VaultsPage() {
             margin: '0 auto',
           }}
         >
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔐</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: 'var(--primary)' }}>
+            <LockKeyhole size={52} />
+          </div>
           <h3 style={{ marginBottom: '0.5rem', color: 'var(--text-main)' }}>
             Acceso Protegido por Doble Factor
           </h3>
@@ -286,7 +306,7 @@ export default function VaultsPage() {
               className="btn btn-primary"
               onClick={() => setTotpModalOpen(true)}
             >
-              🔑 Abrir Sesión con TOTP
+              <KeyRound size={16} /> Abrir Sesión con TOTP
             </button>
             <button
               type="button"
@@ -309,7 +329,9 @@ export default function VaultsPage() {
             margin: '0 auto',
           }}
         >
-          <div style={{ fontSize: '3.2rem', marginBottom: '1rem' }}>🗄️</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: 'var(--text-muted)' }}>
+            <Archive size={52} />
+          </div>
           <h3 style={{ marginBottom: '0.5rem', color: 'var(--text-main)' }}>
             Aún no tienes bóvedas cifradas
           </h3>
@@ -321,7 +343,7 @@ export default function VaultsPage() {
             className="btn btn-primary"
             onClick={() => setCreateModalOpen(true)}
           >
-            🔒 Crear Mi Primera Bóveda
+            <Plus size={16} /> Crear Mi Primera Bóveda
           </button>
         </div>
       ) : (
@@ -365,7 +387,9 @@ export default function VaultsPage() {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ fontSize: '1.5rem' }}>{isUnlocked ? '🔓' : '🗄️'}</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        {isUnlocked ? <LockOpen size={20} color="#34d399" /> : <Archive size={20} color="#94a3b8" />}
+                      </span>
                       <span
                         className={`chip-count ${isUnlocked ? 'chip-success' : 'chip-warning'}`}
                         style={{ fontSize: '0.7rem' }}
@@ -448,6 +472,7 @@ export default function VaultsPage() {
 
                 {/* Acciones */}
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setSelectedVault(vault); setShareModalOpen(true); }} title="Compartir acceso cifrado"><Share2 size={14} /> Compartir</button>
                   {isUnlocked ? (
                     <>
                       <button
@@ -466,7 +491,7 @@ export default function VaultsPage() {
                         onClick={() => handleLockSingleVault(vault.id_boveda)}
                         title="Bloquear y purgar de memoria"
                       >
-                        🔒 Bloquear
+                        <Lock size={14} /> Bloquear
                       </button>
                     </>
                   ) : (
@@ -478,7 +503,7 @@ export default function VaultsPage() {
                         setUnlockModalOpen(true);
                       }}
                     >
-                      🔓 Desbloquear y Descifrar
+                      <LockOpen size={14} /> Desbloquear y Descifrar
                     </button>
                   )}
                 </div>
@@ -505,6 +530,7 @@ export default function VaultsPage() {
         onClose={() => setUnlockModalOpen(false)}
         onUnlocked={handleVaultUnlocked}
       />
+      <ShareAccessModal isOpen={shareModalOpen} vault={selectedVault} onClose={() => setShareModalOpen(false)} />
 
       {/* Modal Rápido de Apertura de Sesión TOTP */}
       {totpModalOpen && (
@@ -516,7 +542,9 @@ export default function VaultsPage() {
           >
             <div className="modal-header">
               <div className="modal-title-group">
-                <span className="modal-icon">🔑</span>
+                <span className="modal-icon">
+                  <KeyRound size={20} />
+                </span>
                 <div>
                   <h3>Abrir Sesión de Bóvedas</h3>
                   <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -530,14 +558,14 @@ export default function VaultsPage() {
                   onClick={() => setTotpModalOpen(false)}
                   aria-label="Cerrar"
                 >
-                  ✕
+                  <X size={18} />
                 </button>
               )}
             </div>
 
             {totpError && (
               <div className="alert-banner error" style={{ marginBottom: '1rem' }}>
-                <span>⚠️</span>
+                <AlertTriangle size={18} style={{ flexShrink: 0 }} />
                 <p>{totpError}</p>
               </div>
             )}

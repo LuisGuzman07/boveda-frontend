@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Smartphone, X, AlertTriangle, CheckCircle2, Copy, Check } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { setupMfa, enableMfa, disableMfa } from '../services/authService';
 
@@ -100,17 +101,17 @@ export default function MfaModal({ isOpen, onClose, isMfaEnabled, onSuccess }) {
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-title-group">
-            <span className="modal-icon">📱</span>
+            <span className="modal-icon"><Smartphone size={20} /></span>
             <h3>{step === 'disable' ? 'Desactivar 2FA' : 'Verificación en Dos Pasos'}</h3>
           </div>
           <button className="modal-close-btn" onClick={onClose}>
-            ✕
+            <X size={18} />
           </button>
         </div>
 
         {error && (
           <div className="alert-banner error" style={{ marginBottom: '1rem' }}>
-            <span>⚠️</span>
+            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
             <p>{error}</p>
           </div>
         )}
@@ -181,7 +182,7 @@ export default function MfaModal({ isOpen, onClose, isMfaEnabled, onSuccess }) {
         {step === 'recovery_codes' && (
           <div className="mfa-recovery-content">
             <div className="mfa-success-header">
-              <span className="mfa-success-icon">✅</span>
+              <span className="mfa-success-icon"><CheckCircle2 size={24} color="#34d399" /></span>
               <h4>¡Verificación en dos pasos activada!</h4>
             </div>
             <p className="mfa-step-desc">
@@ -202,7 +203,7 @@ export default function MfaModal({ isOpen, onClose, isMfaEnabled, onSuccess }) {
                 className={`btn ${copied ? 'btn-secondary' : 'btn-secondary'}`}
                 onClick={handleCopyCodes}
               >
-                {copied ? '✅ Códigos copiados' : '📋 Copiar todos'}
+                {copied ? <><Check size={14} /> Códigos copiados</> : <><Copy size={14} /> Copiar todos</>}
               </button>
               <button
                 type="button"

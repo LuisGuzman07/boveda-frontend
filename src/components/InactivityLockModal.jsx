@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Clock, Lock, AlertTriangle, LockOpen } from 'lucide-react';
 import { useInactivity } from '../context/InactivityContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +13,14 @@ export default function InactivityLockModal() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!isLocked) {
+      setPassword('');
+      setError(null);
+      setShowPassword(false);
+    }
+  }, [isLocked]);
 
   const handleUnlock = async (e) => {
     e.preventDefault();
@@ -61,7 +70,7 @@ export default function InactivityLockModal() {
         onClick={resetTimer}
         title="Haz clic o mueve el cursor para continuar la sesión"
       >
-        <span style={{ fontSize: '1.3rem' }}>⏳</span>
+        <Clock size={20} />
         <div>
           <strong style={{ fontSize: '0.85rem', display: 'block' }}>
             Inactividad Detectada (CU-12)
@@ -92,8 +101,8 @@ export default function InactivityLockModal() {
         padding: '1.5rem',
       }}
     >
-      <div
-        className="modal-card"
+        <div
+          className="modal-card inactivity-modal-card"
         style={{
           maxWidth: '460px',
           width: '100%',
@@ -113,11 +122,10 @@ export default function InactivityLockModal() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '1.75rem',
               margin: '0 auto 1rem auto',
             }}
           >
-            🔒
+            <Lock size={26} color="#60a5fa" />
           </div>
           <h3 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-main)' }}>
             Terminal Bloqueada por Inactividad
@@ -169,7 +177,7 @@ export default function InactivityLockModal() {
         {/* Notificaciones */}
         {error && (
           <div className="alert-banner error" style={{ marginBottom: '1rem' }}>
-            <span>⚠️</span>
+            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
             <p>{error}</p>
           </div>
         )}
@@ -192,34 +200,40 @@ export default function InactivityLockModal() {
 
         {/* Formulario de reautenticación */}
         <form onSubmit={handleUnlock}>
-          <div className="input-group" style={{ marginBottom: '1.25rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label className="input-label">Contraseña de la Cuenta *</label>
+          <div className="inactivity-password-field">
+            <div className="inactivity-password-heading">
+              <label className="input-label" htmlFor="inactivity-password">Contraseña de la cuenta *</label>
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--primary)',
-                  fontSize: '0.75rem',
-                  cursor: 'pointer',
-                  padding: 0,
-                }}
+                className="inactivity-password-toggle"
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                aria-pressed={showPassword}
+                disabled={loading}
               >
                 {showPassword ? 'Ocultar' : 'Mostrar'}
               </button>
             </div>
-            <input
-              type={showPassword ? 'text' : 'password'}
-              className="input-field"
-              placeholder="Ingresa tu contraseña"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-              autoFocus
-              required
-            />
+            <div className={`inactivity-password-shell${error ? ' has-error' : ''}${loading ? ' is-disabled' : ''}`}>
+              <input
+                id="inactivity-password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                className="inactivity-password-input"
+                placeholder="Ingresa tu contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                autoComplete="current-password"
+                autoFocus
+                required
+                aria-invalid={Boolean(error)}
+                aria-describedby="inactivity-password-helper"
+              />
+            </div>
+            <p className="inactivity-password-helper" id="inactivity-password-helper">
+              Tu contraseña vuelve a autenticar esta sesión; no se almacena en el navegador.
+            </p>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
@@ -228,7 +242,7 @@ export default function InactivityLockModal() {
               className="btn btn-primary btn-block"
               disabled={loading || !password}
             >
-              {loading ? 'Verificando credenciales...' : '🔓 Desbloquear Terminal'}
+              {loading ? 'Verificando credenciales...' : <><LockOpen size={16} /> Desbloquear Terminal</>}
             </button>
             <button
               type="button"

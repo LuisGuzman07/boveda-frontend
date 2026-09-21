@@ -1,45 +1,59 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Timer,
+  AlertTriangle,
+  Lock,
+  Archive,
+  ScrollText,
+  KeyRound,
+  Sliders,
+  ShieldCheck,
+  X,
+  CheckCircle2,
+  Settings,
+  Save,
+} from 'lucide-react';
 import { listPolicies, updatePolicy } from '../services/policyService';
 import { useInactivity } from '../context/InactivityContext';
 
 const POLICY_METADATA = {
   INACTIVITY_TIMEOUT_MINUTES: {
-    icon: '⏱️',
+    icon: Timer,
     min: 1,
     max: 120,
     unit: 'minutos',
     help: 'Tiempo sin interacción del usuario antes de purgar claves volátiles y bloquear la terminal (CU-12).',
   },
   MAX_FAILED_LOGIN_ATTEMPTS: {
-    icon: '⚠️',
+    icon: AlertTriangle,
     min: 3,
     max: 10,
     unit: 'intentos',
     help: 'Límite de contraseñas erróneas consecutivas permitidas antes de bloquear preventivamente la cuenta.',
   },
   LOCKOUT_DURATION_MINUTES: {
-    icon: '🔒',
+    icon: Lock,
     min: 5,
     max: 120,
     unit: 'minutos',
     help: 'Tiempo durante el cual la cuenta se mantendrá bloqueada tras exceder los intentos fallidos.',
   },
   VAULT_SESSION_DURATION_MINUTES: {
-    icon: '🗄️',
+    icon: Archive,
     min: 5,
     max: 60,
     unit: 'minutos',
     help: 'Vigencia de la sesión de acceso a bóvedas autenticada mediante segundo factor TOTP.',
   },
   AUDIT_RETENTION_DAYS: {
-    icon: '📜',
+    icon: ScrollText,
     min: 30,
     max: 365,
     unit: 'días',
     help: 'Plazo mínimo legal durante el cual no se permite la depuración de eventos inmutables en bitácora.',
   },
   PASSWORD_MIN_LENGTH: {
-    icon: '🔑',
+    icon: KeyRound,
     min: 8,
     max: 32,
     unit: 'caracteres',
@@ -135,7 +149,7 @@ export default function SecurityPoliciesModal({ isOpen, onClose, onPolicyUpdated
         {/* Header */}
         <div className="modal-header">
           <div className="modal-title-group">
-            <span className="modal-icon">🛡️</span>
+            <span className="modal-icon"><ShieldCheck size={20} /></span>
             <div>
               <h3>Políticas de Seguridad Globales (CU-17)</h3>
               <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -144,27 +158,27 @@ export default function SecurityPoliciesModal({ isOpen, onClose, onPolicyUpdated
             </div>
           </div>
           <button className="modal-close-btn" onClick={onClose} aria-label="Cerrar">
-            ✕
+            <X size={18} />
           </button>
         </div>
 
         {/* Notificaciones */}
         {error && (
           <div className="alert-banner error" style={{ marginBottom: '1rem' }}>
-            <span>⚠️</span>
+            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
             <p>{error}</p>
           </div>
         )}
         {success && (
           <div className="alert-banner success" style={{ marginBottom: '1rem' }}>
-            <span>✅</span>
+            <CheckCircle2 size={18} color="#34d399" style={{ flexShrink: 0 }} />
             <p>{success}</p>
           </div>
         )}
 
         {/* Banner explicativo */}
         <div className="device-zk-banner" style={{ marginBottom: '1.25rem' }}>
-          <div className="zk-icon">⚙️</div>
+          <div className="zk-icon"><Settings size={22} color="#60a5fa" /></div>
           <div className="zk-text">
             <strong>Aplicación Inmediata:</strong> Los cambios en estas políticas entran en vigencia de inmediato para todas las terminales y sesiones activas. Cada modificación se audita inmutablemente registrando usuario, IP y valor previo.
           </div>
@@ -181,12 +195,13 @@ export default function SecurityPoliciesModal({ isOpen, onClose, onPolicyUpdated
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {policies.map((p) => {
                 const meta = POLICY_METADATA[p.codigo] || {
-                  icon: '📌',
+                  icon: Sliders,
                   min: 1,
                   max: 9999,
                   unit: '',
                   help: p.descripcion,
                 };
+                const PolicyIcon = meta.icon;
                 const isSaving = savingCode === p.codigo;
                 const isModified = values[p.codigo] !== p.valor;
 
@@ -203,7 +218,7 @@ export default function SecurityPoliciesModal({ isOpen, onClose, onPolicyUpdated
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.65rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <span style={{ fontSize: '1.35rem' }}>{meta.icon}</span>
+                        <PolicyIcon size={20} color="#93c5fd" />
                         <div>
                           <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-main)' }}>
                             {p.nombre}
@@ -261,7 +276,7 @@ export default function SecurityPoliciesModal({ isOpen, onClose, onPolicyUpdated
                           onClick={() => handleSavePolicy(p)}
                           disabled={isSaving || !isModified}
                         >
-                          {isSaving ? 'Guardando...' : isModified ? '💾 Aplicar' : 'Al día'}
+                          {isSaving ? 'Guardando...' : isModified ? <><Save size={14} /> Aplicar</> : 'Al día'}
                         </button>
                       </div>
                     </div>

@@ -1,13 +1,19 @@
 import api from '../api/axios';
 import { registerDevice } from './deviceService';
 import {
-  getDevicePublicKeyBase64,
   signWithDeviceKey,
   sha256Hex,
   generateUUID,
   prepareVaultPayload,
   unlockVaultLocally,
+  encryptFileWithActiveVaultKey,
+  decryptDownloadedFile,
+  createEmergencyKitPayload,
+  prepareEmergencyRecovery,
+  clearActiveVaultKey,
 } from './vaultCryptoService';
+
+export { clearActiveVaultKey } from './vaultCryptoService';
 
 const SESSION_STORAGE_KEYS = {
   TOKEN: 'boveda_vault_session_token',
@@ -44,6 +50,7 @@ export function clearVaultSession() {
   localStorage.removeItem(SESSION_STORAGE_KEYS.DEVICE_ID);
   localStorage.removeItem(SESSION_STORAGE_KEYS.USER_ID);
   localStorage.removeItem(SESSION_STORAGE_KEYS.EXPIRES_AT);
+  clearActiveVaultKey();
 }
 
 /**
@@ -51,25 +58,56 @@ export function clearVaultSession() {
  * Registra y autoriza primero el hardware local si es necesario.
  */
 export async function openVaultSession(totpCode) {
-  const refreshToken = localStorage.getItem('refresh_token');
-  if (!refreshToken) {
+  clearVaultSession();
+  const accessToken = localStorage.getItem('access_token');
+  if (!accessToken) {
     throw new Error('No se encontró sesión de usuario. Inicie sesión nuevamente.');
   }
 
   // Asegurar que el dispositivo actual y su clave pública estén sincronizados y confiables
-  try {
-    await registerDevice(true);
-  } catch (err) {
-    console.warn('Registro de dispositivo pre-sesión omitido o con advertencia:', err);
-  }
+  await registerDevice(true);
+  const installationId = localStorage.getItem('boveda_trusted_device_id');
+  if (!installationId) throw new Error('No se encontró la identidad del dispositivo.');
 
-  const publicKey = getDevicePublicKeyBase64();
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    'X-Device-Id': installationId,
+  };
+  const devices = await api.get('/devices', { headers });
+  const device = devices.data.dispositivos.find((item) => item.es_dispositivo_actual);
+  if (!device) throw new Error('No se encontró el dispositivo autenticado.');
 
+  const signChallenge = async (purpose) => {
+    const issued = await api.post('/devices/challenge', { proposito: purpose }, { headers });
+    const expiresAt = new Date(issued.data.fecha_expiracion);
+    const transcript = [
+      'boveda-device-challenge-v1',
+      issued.data.id_desafio,
+      purpose,
+      device.id_usuario,
+      device.id_dispositivo,
+      issued.data.nonce,
+      Math.floor(expiresAt.getTime() / 1000).toString(),
+    ].join('\n');
+    return {
+      ...issued.data,
+      firma: signWithDeviceKey(new TextEncoder().encode(transcript)),
+    };
+  };
+
+  const enrollment = await signChallenge('DEVICE_ENROLLMENT');
+  await api.post('/devices/challenge/prove', {
+    id_desafio: enrollment.id_desafio,
+    nonce: enrollment.nonce,
+    firma: enrollment.firma,
+  }, { headers });
+
+  const challenge = await signChallenge('VAULT_SESSION');
   const response = await api.post('/vaults/session', {
-    refresh_token: refreshToken,
-    code: totpCode.trim(),
-    public_key: publicKey,
-  });
+    id_desafio: challenge.id_desafio,
+    nonce: challenge.nonce,
+    firma: challenge.firma,
+  }, { headers });
 
   const { access_token, id_dispositivo, id_usuario, expires_in } = response.data;
   const expiresAt = Date.now() + (expires_in || 900) * 1000;
@@ -102,6 +140,7 @@ async function signedVaultRequest(method, relativePath, body = null, idempotency
   // 1. Extraer jti del token JWT
   const jwtParts = session.token.split('.');
   if (jwtParts.length !== 3) {
+    clearVaultSession();
     throw new Error('Token de sesión de bóvedas corrupto.');
   }
   const normalizedB64 = jwtParts[1].replace(/-/g, '+').replace(/_/g, '/');
@@ -112,7 +151,7 @@ async function signedVaultRequest(method, relativePath, body = null, idempotency
   const timestamp = Math.floor(Date.now() / 1000).toString();
 
   // 3. Ruta completa en el backend
-  const serverPath = `/api/v1${relativePath}`;
+  const serverPath = `/api/v1${relativePath.split('?')[0]}`;
 
   // 4. Digest SHA-256 del cuerpo exacto
   const bodyStr = body ? JSON.stringify(body) : '';
@@ -153,9 +192,7 @@ async function signedVaultRequest(method, relativePath, body = null, idempotency
     });
     return res.data;
   } catch (err) {
-    if (err.response?.status === 401) {
-      clearVaultSession();
-    }
+    clearVaultSession();
     const message = err.response?.data?.detail || err.message || 'Error en petición de bóvedas';
     const errorObj = new Error(message);
     errorObj.status = err.response?.status;
@@ -178,10 +215,42 @@ export async function getVault(vaultId) {
   return await signedVaultRequest('GET', `/vaults/${vaultId}`);
 }
 
+/** Returns encrypted file metadata only; it never downloads or decrypts content. */
+export async function listVaultFiles(vaultId, page = 1, pageSize = 25) {
+  return signedVaultRequest(
+    'GET',
+    `/vaults/${vaultId}/files?page=${page}&page_size=${pageSize}`,
+  );
+}
+
+export async function downloadFile(vaultId, metadata) {
+  const download = await signedVaultRequest(
+    'GET',
+    `/vaults/${vaultId}/files/${metadata.id_version_archivo}/download`,
+  );
+  const { plaintext, filename } = await decryptDownloadedFile({
+    download,
+    metadata,
+    vaultId,
+  });
+  try {
+    const blob = new Blob([plaintext], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  } finally {
+    plaintext.fill(0);
+  }
+}
+
 /**
  * CU-06: Crea una nueva bóveda cifrada de conocimiento cero.
  */
 export async function createVault({ name, description, masterPassword, onProgress }) {
+  clearActiveVaultKey();
   const session = getVaultSessionData();
   if (!session.token || Date.now() >= session.expiresAt) {
     const err = new Error('Se requiere una sesión activa con MFA para crear bóvedas.');
@@ -214,10 +283,69 @@ export async function createVault({ name, description, masterPassword, onProgres
  */
 export async function unlockVault(vault, masterPassword) {
   const session = getVaultSessionData();
-  return await unlockVaultLocally({
+  try {
+    return await unlockVaultLocally({ vault, masterPassword, deviceId: session.deviceId, userId: session.userId });
+  } catch (error) {
+    clearVaultSession();
+    throw error;
+  }
+}
+
+/** Encrypts a browser File before it leaves the device and stores only its ciphertext. */
+export async function uploadFile(vaultId, file) {
+  const body = await encryptFileWithActiveVaultKey({ file, vaultId });
+  const idempotencyKey = `file-${generateUUID()}-${Date.now()}`;
+  return signedVaultRequest('POST', `/vaults/${vaultId}/files`, body, idempotencyKey);
+}
+
+export async function createEmergencyKit(vaultId, recoveryPassword) {
+  const vault = await getVault(vaultId);
+  const payload = await createEmergencyKitPayload({
+    vaultId,
+    vaultKdfSalt: vault.kdf_salt,
+    recoveryPassword,
+  });
+  return signedVaultRequest('POST', `/vaults/${vaultId}/emergency-kit`, payload);
+}
+
+export async function exportEmergencyKit(vaultId) {
+  return signedVaultRequest('GET', `/vaults/${vaultId}/emergency-kit`);
+}
+
+export async function importEmergencyKit(vaultId, kit, recoveryPassword) {
+  const session = getVaultSessionData();
+  if (kit.id_boveda !== vaultId) throw new Error('El kit no corresponde a esta bóveda.');
+  const vault = { id_boveda: vaultId, kdf_salt: kit.kdf_salt_boveda };
+  const payload = await prepareEmergencyRecovery({
+    kit,
     vault,
-    masterPassword,
+    recoveryPassword,
     deviceId: session.deviceId,
     userId: session.userId,
   });
+  await signedVaultRequest('POST', `/vaults/${vaultId}/emergency-kit/recover`, payload);
+  const recoveredVault = await getVault(vaultId);
+  return unlockVaultLocally({
+    vault: recoveredVault,
+    masterPassword: recoveryPassword,
+    deviceId: session.deviceId,
+    userId: session.userId,
+  });
+}
+
+export async function revokeEmergencyKit(vaultId) {
+  return signedVaultRequest('POST', `/vaults/${vaultId}/emergency-kit/revoke`);
+}
+
+export async function createShare(body) {
+  return signedVaultRequest('POST', '/shares', body, `share-${generateUUID()}-${Date.now()}`);
+}
+
+export async function listShares(vaultId) {
+  const data = await signedVaultRequest('GET', `/shares?vault_id=${vaultId}`);
+  return data.items || [];
+}
+
+export async function revokeShare(grantId, motivo) {
+  return signedVaultRequest('POST', `/shares/${grantId}/revoke`, motivo ? { motivo } : {});
 }

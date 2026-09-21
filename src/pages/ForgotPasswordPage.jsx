@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { KeyRound, AlertTriangle, MailCheck, Mail, Lightbulb, ShieldCheck } from 'lucide-react';
 import { requestPasswordReset } from '../services/authService';
 
 export default function ForgotPasswordPage() {
@@ -38,14 +39,16 @@ export default function ForgotPasswordPage() {
     <div className="auth-wrapper">
       <div className="auth-card">
         <div className="auth-header">
-          <div className="auth-brand-icon">🔑</div>
+          <div className="auth-brand-icon">
+            <KeyRound size={36} />
+          </div>
           <h2>Recuperar Cuenta</h2>
           <p>CU-03: Restablecimiento seguro de credenciales</p>
         </div>
 
         {error && (
           <div className="alert-banner error">
-            <span>⚠️</span>
+            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
             <p>{error}</p>
           </div>
         )}
@@ -53,15 +56,18 @@ export default function ForgotPasswordPage() {
         {successData ? (
           <div className="recovery-success-box">
             <div className={`alert-banner ${successData.email_sent ? 'success' : 'info'}`}>
-              <span style={{ fontSize: '1.4rem' }}>{successData.email_sent ? '📬' : '✉️'}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                {successData.email_sent ? <MailCheck size={24} color="#34d399" /> : <Mail size={24} color="#93c5fd" />}
+              </span>
               <div>
                 <strong>{successData.email_sent ? '¡Correo enviado exitosamente!' : 'Solicitud procesada'}</strong>
                 <p style={{ marginTop: '0.35rem', fontSize: '0.88rem', lineHeight: '1.45' }}>
                   {successData.message}
                 </p>
                 {successData.email_sent && (
-                  <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#93c5fd' }}>
-                    💡 <em>Tip: Si no lo ves en tu bandeja de entrada en 1-2 minutos, revisa tu carpeta de Spam o Correo no deseado.</em>
+                  <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#93c5fd', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Lightbulb size={15} style={{ flexShrink: 0 }} />
+                    <em>Tip: Si no lo ves en tu bandeja de entrada en 1-2 minutos, revisa tu carpeta de Spam o Correo no deseado.</em>
                   </p>
                 )}
               </div>
@@ -110,7 +116,7 @@ export default function ForgotPasswordPage() {
         ) : (
           <>
             <div className="info-banner-subtle">
-              <span>🛡️</span>
+              <ShieldCheck size={20} style={{ flexShrink: 0 }} />
               <p>
                 Recuperar tu cuenta restablece la contraseña de acceso sin alterar ni comprometer
                 la clave de tus bóvedas cifradas (Principio Cero-Conocimiento).

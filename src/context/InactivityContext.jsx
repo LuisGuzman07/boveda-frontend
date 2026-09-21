@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { useAuth } from './AuthContext';
 import { getEffectivePolicies, recordInactivityLock } from '../services/policyService';
 import { clearVaultSession } from '../services/vaultService';
-import { loginUser } from '../services/authService';
 
 const InactivityContext = createContext(null);
 
@@ -21,6 +20,18 @@ export function InactivityProvider({ children }) {
   useEffect(() => {
     isLockedRef.current = isLocked;
   }, [isLocked]);
+
+  // Start a fresh inactivity window only after authentication is established or restored.
+  useEffect(() => {
+    lastActivityRef.current = Date.now();
+    setRemainingSeconds(timeoutMinutes * 60);
+    setIsWarning(false);
+
+    if (!isAuthenticated) {
+      isLockedRef.current = false;
+      setIsLocked(false);
+    }
+  }, [isAuthenticated]);
 
   // Cargar política de inactividad vigente
   const fetchTimeoutPolicy = useCallback(async () => {
@@ -57,7 +68,12 @@ export function InactivityProvider({ children }) {
     clearVaultSession();
 
     // Notificar al servidor para auditar en bitácora inmutable
-    await recordInactivityLock(motivo);
+    try {
+      await recordInactivityLock(motivo);
+    } catch (error) {
+      // Locking and key purge must not depend on audit availability.
+      console.warn('No se pudo registrar el bloqueo de inactividad:', error);
+    }
   }, []);
 
   // Escuchadores de actividad del usuario (teclado, ratón, toques, scroll)
@@ -121,12 +137,11 @@ export function InactivityProvider({ children }) {
       throw new Error('No se encontró el correo del usuario activo.');
     }
 
-    const loginData = await loginUser(user.correo, password, true);
+    // Re-authenticate with the user's password; access and refresh tokens are not credentials.
+    const loginData = await login(user.correo, password, true);
     if (loginData.mfa_required) {
       throw new Error('Se requiere segundo factor; inicia sesión desde la pantalla principal.');
     }
-
-    login(loginData.access_token, loginData.refresh_token, loginData.usuario);
 
     setIsLocked(false);
     isLockedRef.current = false;

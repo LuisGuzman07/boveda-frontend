@@ -1,5 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  RotateCcw,
+  AlertTriangle,
+  CheckCircle2,
+  ShieldCheck,
+  Loader2,
+  User,
+  Info,
+  Check,
+  Circle,
+} from 'lucide-react';
 import { resetPassword, validateResetToken } from '../services/authService';
 
 export default function ResetPasswordPage() {
@@ -83,14 +94,16 @@ export default function ResetPasswordPage() {
     <div className="auth-wrapper">
       <div className="auth-card" style={{ maxWidth: '480px' }}>
         <div className="auth-header">
-          <div className="auth-brand-icon">🔄</div>
+          <div className="auth-brand-icon">
+            <RotateCcw size={36} />
+          </div>
           <h2>Restablecer Contraseña</h2>
           <p>CU-03: Actualización segura de credenciales</p>
         </div>
 
         {error && (
           <div className="alert-banner error">
-            <span>⚠️</span>
+            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
             <p>{error}</p>
           </div>
         )}
@@ -98,7 +111,7 @@ export default function ResetPasswordPage() {
         {successData ? (
           <div className="recovery-success-box">
             <div className="alert-banner success">
-              <span>✅</span>
+              <CheckCircle2 size={22} color="#34d399" style={{ flexShrink: 0 }} />
               <div>
                 <strong>{successData.message}</strong>
                 <p style={{ marginTop: '0.25rem', fontSize: '0.88rem' }}>
@@ -108,7 +121,9 @@ export default function ResetPasswordPage() {
             </div>
 
             <div className="zk-guarantee-card">
-              <span className="zk-icon">🛡️</span>
+              <span className="zk-icon">
+                <ShieldCheck size={20} />
+              </span>
               <div className="zk-text">
                 <span className="zk-title">Principio Cero-Conocimiento Garantizado</span>
                 <p>{successData.zero_knowledge_notice}</p>
@@ -167,8 +182,9 @@ export default function ResetPasswordPage() {
             )}
 
             {tokenStatus === 'checking' && (
-              <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)' }}>
-                <span>⏳ Validando vigencia del token de seguridad...</span>
+              <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                <Loader2 size={18} className="spinner" />
+                <span>Validando vigencia del token de seguridad...</span>
               </div>
             )}
 
@@ -176,13 +192,17 @@ export default function ResetPasswordPage() {
               <>
                 {userEmail && (
                   <div className="account-badge">
-                    <span>👤 Cuenta a recuperar:</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <User size={15} /> Cuenta a recuperar:
+                    </span>
                     <strong>{userEmail}</strong>
                   </div>
                 )}
 
                 <div className="zk-guarantee-card" style={{ marginBottom: '1.25rem' }}>
-                  <span className="zk-icon">ℹ️</span>
+                  <span className="zk-icon">
+                    <Info size={18} />
+                  </span>
                   <div className="zk-text">
                     <span className="zk-title">Aviso de Privacidad y Bóvedas</span>
                     <p>
@@ -225,22 +245,40 @@ export default function ResetPasswordPage() {
                   {/* Checklist de requisitos de seguridad */}
                   <div className="password-checklist">
                     <div className={`check-item ${hasMinLength ? 'ok' : ''}`}>
-                      <span>{hasMinLength ? '✓' : '○'}</span> Mínimo 8 caracteres
+                      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        {hasMinLength ? <Check size={14} color="#34d399" /> : <Circle size={14} color="var(--text-dim)" />}
+                      </span>{' '}
+                      Mínimo 8 caracteres
                     </div>
                     <div className={`check-item ${hasUpper ? 'ok' : ''}`}>
-                      <span>{hasUpper ? '✓' : '○'}</span> Al menos una mayúscula (A-Z)
+                      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        {hasUpper ? <Check size={14} color="#34d399" /> : <Circle size={14} color="var(--text-dim)" />}
+                      </span>{' '}
+                      Al menos una mayúscula (A-Z)
                     </div>
                     <div className={`check-item ${hasLower ? 'ok' : ''}`}>
-                      <span>{hasLower ? '✓' : '○'}</span> Al menos una minúscula (a-z)
+                      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        {hasLower ? <Check size={14} color="#34d399" /> : <Circle size={14} color="var(--text-dim)" />}
+                      </span>{' '}
+                      Al menos una minúscula (a-z)
                     </div>
                     <div className={`check-item ${hasNumber ? 'ok' : ''}`}>
-                      <span>{hasNumber ? '✓' : '○'}</span> Al menos un número (0-9)
+                      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        {hasNumber ? <Check size={14} color="#34d399" /> : <Circle size={14} color="var(--text-dim)" />}
+                      </span>{' '}
+                      Al menos un número (0-9)
                     </div>
                     <div className={`check-item ${hasSpecial ? 'ok' : ''}`}>
-                      <span>{hasSpecial ? '✓' : '○'}</span> Carácter especial (!@#$...)
+                      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        {hasSpecial ? <Check size={14} color="#34d399" /> : <Circle size={14} color="var(--text-dim)" />}
+                      </span>{' '}
+                      Carácter especial (!@#$...)
                     </div>
                     <div className={`check-item ${passwordsMatch ? 'ok' : ''}`}>
-                      <span>{passwordsMatch ? '✓' : '○'}</span> Las contraseñas coinciden
+                      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        {passwordsMatch ? <Check size={14} color="#34d399" /> : <Circle size={14} color="var(--text-dim)" />}
+                      </span>{' '}
+                      Las contraseñas coinciden
                     </div>
                   </div>
 
