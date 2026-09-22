@@ -313,7 +313,7 @@ export default function UnlockVaultModal({
         {error && (
           <div className="alert-banner error" style={{ marginBottom: '1rem', flexShrink: 0 }}>
             <AlertTriangle size={18} style={{ flexShrink: 0 }} />
-            <p>{error}</p>
+            <p>{typeof error === 'string' ? error : (error?.message || JSON.stringify(error))}</p>
           </div>
         )}
 

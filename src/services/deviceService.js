@@ -52,13 +52,15 @@ export function detectEnvironment() {
   }
 
   const friendlyName = `${browser} en ${os}`;
+  const devicePublicKey = getDevicePublicKeyBase64();
 
   return {
     nombre: friendlyName,
     tipo: type,
     sistema_operativo: os,
     identificador_seguro: getOrCreateDeviceId(),
-    public_key: getDevicePublicKeyBase64(),
+    public_key: devicePublicKey,
+    vault_public_key: devicePublicKey,
   };
 }
 
@@ -67,9 +69,11 @@ export function detectEnvironment() {
  */
 export function getDeviceInfo(confiarDispositivo = false) {
   const env = detectEnvironment();
+  const devicePublicKey = getDevicePublicKeyBase64();
   return {
     ...env,
-    public_key: getDevicePublicKeyBase64(),
+    public_key: devicePublicKey,
+    vault_public_key: devicePublicKey,
     confiar_dispositivo: Boolean(confiarDispositivo),
   };
 }

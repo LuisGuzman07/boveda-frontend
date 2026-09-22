@@ -198,7 +198,17 @@ async function signedVaultRequest(method, relativePath, body = null, idempotency
     if (err.response?.status === 401) {
       clearVaultSession();
     }
-    const message = err.response?.data?.detail || err.message || 'Error en petición de bóvedas';
+    const rawDetail = err.response?.data?.detail;
+    let message = 'Error en petición de bóvedas';
+    if (typeof rawDetail === 'string') {
+      message = rawDetail;
+    } else if (Array.isArray(rawDetail)) {
+      message = rawDetail.map((d) => `${d.loc ? d.loc.slice(-1)[0] + ': ' : ''}${d.msg || JSON.stringify(d)}`).join(', ');
+    } else if (rawDetail && typeof rawDetail === 'object') {
+      message = rawDetail.msg || rawDetail.message || JSON.stringify(rawDetail);
+    } else if (err.message) {
+      message = err.message;
+    }
     const errorObj = new Error(message);
     errorObj.status = err.response?.status;
     throw errorObj;
