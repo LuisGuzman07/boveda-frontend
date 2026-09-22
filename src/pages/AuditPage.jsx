@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Download, Search, AlertTriangle, ScrollText, X, ShieldCheck, ScanSearch } from 'lucide-react';
-import { createComplianceReport, downloadComplianceReport, getAuditEvents, getAuditStats, getComplianceReports, getLocalAnomalyRuns, runLocalAnomalyAnalysis, verifyAuditChain } from '../services/auditService';
+import { Download, Search, AlertTriangle, ScrollText, X, ShieldCheck, ScanSearch, BrainCircuit } from 'lucide-react';
+import { createComplianceReport, downloadComplianceReport, getAuditEvents, getAuditStats, getComplianceReports, getLocalAnomalyRuns, runLocalAnomalyAnalysis, verifyAuditChain, getAnomalyStats, getLatestAnomalyRun } from '../services/auditService';
+import AnomalyDetectionModal from '../components/AnomalyDetectionModal';
 
 export default function AuditPage() {
   const [events, setEvents] = useState([]);
@@ -25,6 +26,9 @@ export default function AuditPage() {
   const [integrity, setIntegrity] = useState(null);
   const [analysisRuns, setAnalysisRuns] = useState([]);
   const [analysing, setAnalysing] = useState(false);
+  const [showAnomalyModal, setShowAnomalyModal] = useState(false);
+  const [anomalyStats, setAnomalyStats] = useState(null);
+  const [latestAnomalyRun, setLatestAnomalyRun] = useState(null);
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -85,6 +89,20 @@ export default function AuditPage() {
       setError(err.response?.data?.detail || 'No se pudieron cargar los análisis locales.');
     }
   };
+
+  const fetchAnomalyStats = async () => {
+    try {
+      const data = await getAnomalyStats();
+      setAnomalyStats(data);
+    } catch (err) {
+      console.error('Error al cargar estadísticas de anomalías:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAnomalyStats();
+    fetchAnalysisRuns();
+  }, []);
 
   const fetchReports = async () => {
     setReportsLoading(true);
@@ -169,22 +187,70 @@ export default function AuditPage() {
           <strong>Integridad de cadena: </strong>
           {integrity ? (integrity.status === 'VALID' ? `VÁLIDA (${integrity.checked_events} eventos)` : `INVÁLIDA en secuencia ${integrity.first_invalid_sequence}`) : 'Sin verificar'}
         </div>
-        <div className="select-filters-group">
+        <div className="select-filters-group" style={{ alignItems: 'center' }}>
           <button type="button" className="btn btn-secondary btn-sm" onClick={fetchIntegrity} disabled={loading}>
             <ShieldCheck size={15} /> Verificar cadena
           </button>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={handleAnalysis} disabled={analysing}>
-            <ScanSearch size={15} /> {analysing ? 'Analizando...' : 'Análisis local'}
-          </button>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={fetchAnalysisRuns}>
-            Ver análisis
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={() => setShowAnomalyModal(true)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)',
+              border: 'none',
+              fontWeight: 600,
+            }}
+          >
+            <BrainCircuit size={16} /> IA Local de Anomalías (CU-22)
+            {anomalyStats?.anomalias_criticas > 0 && (
+              <span
+                style={{
+                  background: 'var(--danger)',
+                  color: '#fff',
+                  borderRadius: '9999px',
+                  padding: '0.1rem 0.45rem',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                }}
+              >
+                {anomalyStats.anomalias_criticas}
+              </span>
+            )}
           </button>
         </div>
       </div>
 
-      {analysisRuns.length > 0 && (
-        <div className="alert-banner" style={{ marginBottom: '1.5rem' }}>
-          <p>Último análisis local: {analysisRuns[0].estado} · {analysisRuns[0].total_eventos} eventos · {analysisRuns[0].hallazgos?.filter((item) => item.etiqueta === 'ANOMALIA').length || 0} anomalías. No se envían datos fuera del sistema.</p>
+      {anomalyStats?.anomalias_criticas > 0 && (
+        <div
+          className="alert-banner"
+          style={{
+            marginBottom: '1.25rem',
+            borderColor: 'rgba(239, 68, 68, 0.4)',
+            background: 'rgba(239, 68, 68, 0.08)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '0.75rem',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <AlertTriangle size={18} style={{ color: 'var(--danger)', flexShrink: 0 }} />
+            <span>
+              <strong>Alerta de Seguridad (IA Local):</strong> Se han detectado{' '}
+              <strong style={{ color: 'var(--danger)' }}>{anomalyStats.anomalias_criticas}</strong> anomalía(s) de severidad crítica en la bitácora operativa.
+            </span>
+          </div>
+          <button
+            type="button"
+            className="btn btn-danger btn-xs"
+            onClick={() => setShowAnomalyModal(true)}
+          >
+            Revisar Hallazgos
+          </button>
         </div>
       )}
 
@@ -416,6 +482,58 @@ export default function AuditPage() {
               </button>
             </div>
 
+            {(() => {
+              const eventAnomaly = analysisRuns?.[0]?.hallazgos?.find(
+                (h) => h.id_evento === selectedEvent.id_evento || h.secuencia_evento === selectedEvent.chain_sequence
+              );
+              if (!eventAnomaly) return null;
+
+              const isCritical = eventAnomaly.nivel_riesgo === 'CRITICO';
+              const isHigh = eventAnomaly.nivel_riesgo === 'ALTO';
+
+              return (
+                <div
+                  style={{
+                    background: isCritical ? 'rgba(239, 68, 68, 0.08)' : (isHigh ? 'rgba(245, 158, 11, 0.08)' : 'rgba(99, 102, 241, 0.08)'),
+                    border: `1px solid ${isCritical ? 'rgba(239, 68, 68, 0.35)' : (isHigh ? 'rgba(245, 158, 11, 0.35)' : 'rgba(99, 102, 241, 0.35)')}`,
+                    borderRadius: '0.65rem',
+                    padding: '1rem 1.25rem',
+                    marginBottom: '1.25rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <BrainCircuit size={18} style={{ color: isCritical ? 'var(--danger)' : '#818cf8' }} />
+                      <strong style={{ fontSize: '0.95rem' }}>
+                        Diagnóstico del Motor de IA Local (CU-22)
+                      </strong>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Score de Inferencia:</span>
+                      <code style={{ fontSize: '0.95rem', fontWeight: 700, color: eventAnomaly.decision_score < 0 ? 'var(--danger)' : 'var(--success)' }}>
+                        {eventAnomaly.decision_score.toFixed(4)}
+                      </code>
+                      <span className={`audit-badge ${isCritical ? 'audit-badge-danger' : (isHigh ? 'audit-badge-warning' : 'audit-badge-info')}`}>
+                        {eventAnomaly.nivel_riesgo}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p style={{ margin: '0 0 0.4rem 0', fontSize: '0.85rem', color: 'var(--text-main)', lineHeight: '1.45' }}>
+                    <strong>Explicación:</strong> {eventAnomaly.explicacion}
+                  </p>
+
+                  <div style={{ fontSize: '0.775rem', color: 'var(--text-muted)', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.35rem' }}>
+                    <strong>Criterio Matemático:</strong>{' '}
+                    {isCritical && 'Score < -0.1000 (Desviación crítica extrema en árboles de decisión por fallo/horario).'}
+                    {isHigh && '-0.1000 <= Score < -0.0500 (Desviación notable respecto a la media estadística).'}
+                    {eventAnomaly.nivel_riesgo === 'MEDIO' && '-0.0500 <= Score < 0.0000 (Desviación leve o moderada).'}
+                    {eventAnomaly.nivel_riesgo === 'NORMAL' && 'Score >= 0.0000 (Actividad estándar y recurrente).'}
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="detail-grid">
               <div className="detail-item">
                 <span className="detail-label">ID del Evento</span>
@@ -485,6 +603,27 @@ export default function AuditPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de IA Local para Detección de Anomalías (CU-22) */}
+      <AnomalyDetectionModal
+        isOpen={showAnomalyModal}
+        onClose={() => {
+          setShowAnomalyModal(false);
+          fetchAnomalyStats();
+        }}
+        onInspectEvent={(eventId, sequence) => {
+          const found = events.find((e) => e.id_evento === eventId || e.chain_sequence === sequence);
+          if (found) {
+            setSelectedEvent(found);
+            setShowAnomalyModal(false);
+          } else {
+            setSearchQuery(sequence ? sequence.toString() : '');
+            setPage(1);
+            setShowAnomalyModal(false);
+            fetchEvents();
+          }
+        }}
+      />
     </div>
   );
 }

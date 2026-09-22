@@ -16,6 +16,7 @@ import {
   revokeDeviceTrust,
   deleteDevice,
   registerDevice,
+  enrollCurrentDeviceAsTrusted,
   getOrCreateDeviceId,
 } from '../services/deviceService';
 
@@ -53,11 +54,18 @@ export default function TrustedDevicesModal({ isOpen, onClose, onDeviceUpdated }
     setError(null);
     setSuccessMsg(null);
 
+    const isCurrent = Boolean(device.es_dispositivo_actual || device.identificador_seguro === currentLocalId);
     const newTrustStatus = !device.es_confiable;
     try {
       if (newTrustStatus) {
-        await setDeviceTrust(device.id_dispositivo, true);
-        setSuccessMsg(`Dispositivo '${device.nombre}' autorizado como de confianza.`);
+        if (!isCurrent) {
+          setError(
+            `Por principios de Cero Conocimiento y Zero-Trust (CU-05), la autorización requiere la firma criptográfica generada en el hardware de ese equipo. Inicia sesión directamente en '${device.nombre}' para autorizarlo como de confianza.`
+          );
+          return;
+        }
+        await setDeviceTrust(device.id_dispositivo, true, device);
+        setSuccessMsg(`Dispositivo '${device.nombre}' verificado criptográficamente y autorizado como de confianza.`);
       } else {
         await revokeDeviceTrust(device.id_dispositivo);
         setSuccessMsg(`Se revocó la confianza del dispositivo '${device.nombre}'.`);
@@ -65,7 +73,8 @@ export default function TrustedDevicesModal({ isOpen, onClose, onDeviceUpdated }
       await fetchDevices();
       onDeviceUpdated?.();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al modificar estado de confianza.');
+      console.error('Error al modificar confianza del dispositivo:', err);
+      setError(err.response?.data?.detail || err.message || 'Error al modificar estado de confianza.');
     } finally {
       setActionLoadingId(null);
     }
@@ -98,12 +107,14 @@ export default function TrustedDevicesModal({ isOpen, onClose, onDeviceUpdated }
     setSuccessMsg(null);
 
     try {
-      await registerDevice(true);
-      setSuccessMsg('Este dispositivo ha sido registrado y autorizado como de confianza.');
+      const regRes = await registerDevice(false);
+      await enrollCurrentDeviceAsTrusted(regRes?.dispositivo);
+      setSuccessMsg('Este dispositivo ha sido verificado criptográficamente y autorizado como de confianza.');
       await fetchDevices();
       onDeviceUpdated?.();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al registrar el dispositivo actual.');
+      console.error('Error al registrar y autorizar dispositivo actual:', err);
+      setError(err.response?.data?.detail || err.message || 'Error al registrar y autorizar el dispositivo actual.');
     } finally {
       setLoading(false);
     }
@@ -228,9 +239,14 @@ export default function TrustedDevicesModal({ isOpen, onClose, onDeviceUpdated }
                         className={`btn btn-sm ${device.es_confiable ? 'btn-secondary' : 'btn-primary'}`}
                         onClick={() => handleToggleTrust(device)}
                         disabled={isBusy}
+                        title={
+                          !device.es_confiable && !isCurrent
+                            ? 'La autorización criptográfica requiere iniciar sesión desde ese equipo físico'
+                            : ''
+                        }
                       >
                         {isBusy
-                          ? 'Actualizando...'
+                          ? 'Verificando firma...'
                           : device.es_confiable
                           ? <><X size={13} /> Revocar Confianza</>
                           : <><ShieldCheck size={13} /> Autorizar como Confiable</>}

@@ -25,6 +25,21 @@ export const getLocalAnomalyRuns = async () => {
   return response.data;
 };
 
+export const getLatestAnomalyRun = async () => {
+  const response = await api.get('/audit/anomalies/latest');
+  return response.data;
+};
+
+export const getAnomalyStats = async () => {
+  const response = await api.get('/audit/anomalies/stats');
+  return response.data;
+};
+
+export const getAnomalyRunDetails = async (runId) => {
+  const response = await api.get(`/audit/anomalies/runs/${runId}`);
+  return response.data;
+};
+
 export const createComplianceReport = async (payload) => {
   const response = await api.post('/audit/reports', payload);
   return response.data;

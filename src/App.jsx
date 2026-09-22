@@ -5,6 +5,7 @@ import { InactivityProvider } from './context/InactivityContext';
 import InactivityLockModal from './components/InactivityLockModal';
 import Navbar from './components/Navbar';
 import AppRoutes from './routes/AppRoutes';
+import AIAssistantWidget from './components/AIAssistantWidget';
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
             </main>
           </div>
           <InactivityLockModal />
+          <AIAssistantWidget />
         </InactivityProvider>
       </AuthProvider>
     </BrowserRouter>

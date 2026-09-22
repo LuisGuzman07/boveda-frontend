@@ -1,5 +1,5 @@
 import api from '../api/axios';
-import { getDevicePublicKeyBase64 } from './vaultCryptoService';
+import { getDevicePublicKeyBase64, signWithDeviceKey } from './vaultCryptoService';
 
 const STORAGE_KEY = 'boveda_trusted_device_id';
 
@@ -97,23 +97,83 @@ export async function registerDevice(confiar = false) {
 }
 
 /**
- * Autoriza o revoca el estado de confianza de un dispositivo.
+ * Realiza el desafío criptográfico de posesión (DEVICE_ENROLLMENT)
+ * para autorizar el dispositivo local como confiable (Zero-Trust CU-04/CU-05).
  */
-export async function setDeviceTrust(deviceId, esConfiable, nombre = null) {
-  const currentId = getOrCreateDeviceId();
-  const response = await api.post(
-    `/devices/${deviceId}/authorize`,
-    {
-      es_confiable: Boolean(esConfiable),
-      nombre,
-    },
-    {
-      headers: {
-        'X-Device-Id': currentId,
-      },
+export async function enrollCurrentDeviceAsTrusted(targetDevice = null) {
+  const currentInstallationId = getOrCreateDeviceId();
+  const headers = {
+    'X-Device-Id': currentInstallationId,
+  };
+
+  // 1. Obtener los datos del dispositivo actual si no fueron proporcionados
+  let device = targetDevice;
+  if (!device || !device.id_dispositivo || !device.id_usuario) {
+    const listRes = await listDevices();
+    const devicesList = listRes.dispositivos || [];
+    device = devicesList.find(
+      (d) => d.es_dispositivo_actual || d.identificador_seguro === currentInstallationId
+    );
+    if (!device) {
+      const regRes = await registerDevice(false);
+      device = regRes.dispositivo;
     }
+  }
+
+  if (!device || !device.id_dispositivo) {
+    throw new Error('No se pudo identificar el dispositivo actual para la autorización criptográfica.');
+  }
+
+  // 2. Solicitar el desafío criptográfico de enrolamiento
+  const challengeRes = await api.post(
+    '/devices/challenge',
+    { proposito: 'DEVICE_ENROLLMENT' },
+    { headers }
   );
-  return response.data;
+
+  const { id_desafio, nonce, fecha_expiracion } = challengeRes.data;
+  const expiresAt = new Date(fecha_expiracion);
+
+  // 3. Construir el transcript canónico:
+  // boveda-device-challenge-v1\n<id_desafio>\nDEVICE_ENROLLMENT\n<id_usuario>\n<id_dispositivo>\n<nonce>\n<exp_timestamp>
+  const transcript = [
+    'boveda-device-challenge-v1',
+    id_desafio,
+    'DEVICE_ENROLLMENT',
+    device.id_usuario,
+    device.id_dispositivo,
+    nonce,
+    Math.floor(expiresAt.getTime() / 1000).toString(),
+  ].join('\n');
+
+  // 4. Firmar canónicamente con la clave privada Ed25519 del dispositivo local
+  const firma = signWithDeviceKey(new TextEncoder().encode(transcript));
+
+  // 5. Enviar la prueba criptográfica de posesión al servidor
+  const proofRes = await api.post(
+    '/devices/challenge/prove',
+    {
+      id_desafio,
+      nonce,
+      firma,
+    },
+    { headers }
+  );
+
+  return proofRes.data;
+}
+
+/**
+ * Autoriza o revoca el estado de confianza de un dispositivo.
+ * - Para autorizar (esConfiable = true): Ejecuta el protocolo de desafío criptográfico Ed25519.
+ * - Para revocar (esConfiable = false): Utiliza el endpoint de revocación de confianza.
+ */
+export async function setDeviceTrust(deviceId, esConfiable, deviceObj = null) {
+  if (esConfiable) {
+    return await enrollCurrentDeviceAsTrusted(deviceObj);
+  } else {
+    return await revokeDeviceTrust(deviceId);
+  }
 }
 
 /**

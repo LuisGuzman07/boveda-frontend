@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   ShieldCheck,
   AlertTriangle,
@@ -24,6 +24,7 @@ import AdminUsersModal from '../components/AdminUsersModal';
 
 export default function DashboardPage() {
   const { user, roles, permissions } = useAuth();
+  const location = useLocation();
   const isAdmin = roles.includes('Administrador');
   const canAdminUsers = permissions.includes('users:read');
   const [mfaStatus, setMfaStatus] = useState({ mfa_enabled: false, tipo: null });
@@ -76,6 +77,25 @@ export default function DashboardPage() {
     fetchMfaStatus();
     fetchDeviceStatus();
   }, []);
+
+  useEffect(() => {
+    const handleOpenModal = (e) => {
+      const modalName = e.detail;
+      if (modalName === 'trusted_devices') setDevicesModalOpen(true);
+      else if (modalName === 'mfa_modal') setMfaModalOpen(true);
+      else if (modalName === 'security_policies') setPoliciesModalOpen(true);
+      else if (modalName === 'admin_devices') setAdminDevicesModalOpen(true);
+      else if (modalName === 'admin_users') setAdminUsersModalOpen(true);
+    };
+
+    window.addEventListener('boveda:open-modal', handleOpenModal);
+
+    if (location.state?.openModal) {
+      handleOpenModal({ detail: location.state.openModal });
+    }
+
+    return () => window.removeEventListener('boveda:open-modal', handleOpenModal);
+  }, [location.state]);
 
   const isMfaActive = Boolean(mfaStatus?.enabled || mfaStatus?.mfa_enabled);
 
