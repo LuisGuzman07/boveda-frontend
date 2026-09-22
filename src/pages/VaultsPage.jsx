@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   LockKeyhole,
   LockOpen,
+  FolderOpen,
   X,
   Share2,
 } from 'lucide-react';
@@ -477,13 +478,14 @@ export default function VaultsPage() {
                     <>
                       <button
                         type="button"
-                        className="btn btn-secondary btn-block btn-sm"
+                        className="btn btn-primary btn-block btn-sm"
                         onClick={() => {
                           setSelectedVault(vault);
                           setUnlockModalOpen(true);
                         }}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
                       >
-                        Ver Detalles
+                        <FolderOpen size={14} /> Abrir Bóveda / Archivos
                       </button>
                       <button
                         type="button"
@@ -523,12 +525,14 @@ export default function VaultsPage() {
         }}
       />
 
-      {/* Modal de Desbloquear Bóveda */}
+      {/* Modal de Desbloquear y Gestionar Archivos de Bóveda */}
       <UnlockVaultModal
         isOpen={unlockModalOpen}
         vault={selectedVault}
+        initialUnlockedData={selectedVault ? unlockedMap[selectedVault.id_boveda] : null}
         onClose={() => setUnlockModalOpen(false)}
         onUnlocked={handleVaultUnlocked}
+        onLock={handleLockSingleVault}
       />
       <ShareAccessModal isOpen={shareModalOpen} vault={selectedVault} onClose={() => setShareModalOpen(false)} />
 

@@ -473,3 +473,31 @@ export async function encryptFileWithActiveVaultKey({ file, vaultId }) {
     fileBytes.fill(0);
   }
 }
+
+export async function decryptFilename({ vaultId, versionId, encryptedNameEnvelope, wrappedKeyEnvelope }) {
+  if (!activeVaultKey || !encryptedNameEnvelope || !wrappedKeyEnvelope) {
+    return null;
+  }
+  let fileKey = null;
+  try {
+    fileKey = await decryptAesGcm(
+      wrappedKeyEnvelope,
+      activeVaultKey,
+      `${vaultId}:file-key:${versionId}:v1`,
+    );
+    const nameBytes = await decryptAesGcm(
+      encryptedNameEnvelope,
+      fileKey,
+      `${vaultId}:filename:${versionId}:v1`,
+    );
+    const filename = safeDownloadName(new TextDecoder().decode(nameBytes));
+    nameBytes.fill(0);
+    return filename;
+  } catch (err) {
+    console.warn('No se pudo descifrar el nombre del archivo:', err);
+    return null;
+  } finally {
+    if (fileKey) fileKey.fill(0);
+  }
+}
+

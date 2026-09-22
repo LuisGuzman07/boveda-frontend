@@ -8,12 +8,14 @@ import {
   unlockVaultLocally,
   encryptFileWithActiveVaultKey,
   decryptDownloadedFile,
+  decryptFilename,
+  hasActiveVaultKey,
   createEmergencyKitPayload,
   prepareEmergencyRecovery,
   clearActiveVaultKey,
 } from './vaultCryptoService';
 
-export { clearActiveVaultKey } from './vaultCryptoService';
+export { clearActiveVaultKey, hasActiveVaultKey, decryptFilename } from './vaultCryptoService';
 
 const SESSION_STORAGE_KEYS = {
   TOKEN: 'boveda_vault_session_token',
@@ -189,10 +191,13 @@ async function signedVaultRequest(method, relativePath, body = null, idempotency
       url: relativePath,
       data: bodyStr || undefined,
       headers,
+      timeout: 60000,
     });
     return res.data;
   } catch (err) {
-    clearVaultSession();
+    if (err.response?.status === 401) {
+      clearVaultSession();
+    }
     const message = err.response?.data?.detail || err.message || 'Error en petición de bóvedas';
     const errorObj = new Error(message);
     errorObj.status = err.response?.status;
@@ -224,9 +229,10 @@ export async function listVaultFiles(vaultId, page = 1, pageSize = 25) {
 }
 
 export async function downloadFile(vaultId, metadata) {
+  const versionId = metadata.id_version_archivo;
   const download = await signedVaultRequest(
     'GET',
-    `/vaults/${vaultId}/files/${metadata.id_version_archivo}/download`,
+    `/vaults/${vaultId}/files/${versionId}/download`,
   );
   const { plaintext, filename } = await decryptDownloadedFile({
     download,
@@ -239,12 +245,16 @@ export async function downloadFile(vaultId, metadata) {
     const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = filename;
+    document.body.appendChild(anchor);
     anchor.click();
+    document.body.removeChild(anchor);
     URL.revokeObjectURL(url);
+    return { plaintext, filename };
   } finally {
     plaintext.fill(0);
   }
 }
+export const downloadAndDecryptVaultFile = (vaultId, versionId, metadata) => downloadFile(vaultId, metadata);
 
 /**
  * CU-06: Crea una nueva bóveda cifrada de conocimiento cero.
@@ -291,12 +301,26 @@ export async function unlockVault(vault, masterPassword) {
   }
 }
 
-/** Encrypts a browser File before it leaves the device and stores only its ciphertext. */
+/** CU-08: Encrypts a browser File before it leaves the device and stores only its ciphertext in MinIO. */
 export async function uploadFile(vaultId, file) {
   const body = await encryptFileWithActiveVaultKey({ file, vaultId });
   const idempotencyKey = `file-${generateUUID()}-${Date.now()}`;
   return signedVaultRequest('POST', `/vaults/${vaultId}/files`, body, idempotencyKey);
 }
+export const uploadVaultFile = uploadFile;
+
+/** CU-11: Eliminación lógica de un archivo cifrado en la bóveda. */
+export async function deleteVaultFile(vaultId, fileId, reason = 'Eliminado por el usuario') {
+  const idempotencyKey = `del-${generateUUID()}-${Date.now()}`;
+  return signedVaultRequest(
+    'DELETE',
+    `/vaults/${vaultId}/files/${fileId}`,
+    { motivo: reason },
+    idempotencyKey
+  );
+}
+
+
 
 export async function createEmergencyKit(vaultId, recoveryPassword) {
   const vault = await getVault(vaultId);
