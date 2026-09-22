@@ -161,11 +161,12 @@ export default function CreateVaultModal({ isOpen, onClose, onSuccess }) {
 
         {/* Formulario */}
         <form onSubmit={handleSubmit}>
-          <div className="input-group" style={{ marginBottom: '1rem' }}>
-            <label className="input-label">Nombre de la Bóveda *</label>
+          <div className="form-field" style={{ marginBottom: '1rem' }}>
+            <label htmlFor="vault-name">Nombre de la Bóveda *</label>
             <input
+              id="vault-name"
               type="text"
-              className="input-field"
+              className="input-control"
               placeholder="Ej: Documentos Financieros Confidenciales"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -175,10 +176,11 @@ export default function CreateVaultModal({ isOpen, onClose, onSuccess }) {
             />
           </div>
 
-          <div className="input-group" style={{ marginBottom: '1rem' }}>
-            <label className="input-label">Descripción Opcional</label>
+          <div className="form-field" style={{ marginBottom: '1rem' }}>
+            <label htmlFor="vault-description">Descripción Opcional</label>
             <textarea
-              className="input-field"
+              id="vault-description"
+              className="input-control"
               rows="2"
               placeholder="Notas o propósito de esta bóveda (se cifra en el cliente)"
               value={description}
@@ -209,21 +211,15 @@ export default function CreateVaultModal({ isOpen, onClose, onSuccess }) {
               <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
                 Para habilitar operaciones criptográficas en este dispositivo, ingresa el código de 6 dígitos generado por tu aplicación Bóveda Authenticator.
               </p>
-              <div className="input-group">
+              <div className="form-field">
                 <input
                   type="text"
-                  className="input-field"
+                  className="input-control mfa-code-input"
                   placeholder="000000"
                   maxLength={6}
                   value={totpCode}
                   onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
                   disabled={loading}
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '1.25rem',
-                    textAlign: 'center',
-                    letterSpacing: '0.35em',
-                  }}
                   required
                 />
               </div>
@@ -231,9 +227,9 @@ export default function CreateVaultModal({ isOpen, onClose, onSuccess }) {
           )}
 
           {/* Contraseña Maestra de la Bóveda */}
-          <div className="input-group" style={{ marginBottom: '0.75rem' }}>
+          <div className="form-field" style={{ marginBottom: '0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label className="input-label">Contraseña Maestra de la Bóveda *</label>
+              <label htmlFor="master-password">Contraseña Maestra de la Bóveda *</label>
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -250,8 +246,9 @@ export default function CreateVaultModal({ isOpen, onClose, onSuccess }) {
               </button>
             </div>
             <input
+              id="master-password"
               type={showPassword ? 'text' : 'password'}
-              className="input-field"
+              className="input-control"
               placeholder="Mínimo 12 caracteres alfanuméricos y símbolos"
               value={masterPassword}
               onChange={(e) => setMasterPassword(e.target.value)}
@@ -293,11 +290,12 @@ export default function CreateVaultModal({ isOpen, onClose, onSuccess }) {
             )}
           </div>
 
-          <div className="input-group" style={{ marginBottom: '1.25rem' }}>
-            <label className="input-label">Confirmar Contraseña Maestra *</label>
+          <div className="form-field" style={{ marginBottom: '1.25rem' }}>
+            <label htmlFor="confirm-password">Confirmar Contraseña Maestra *</label>
             <input
+              id="confirm-password"
               type={showPassword ? 'text' : 'password'}
-              className="input-field"
+              className="input-control"
               placeholder="Repite la contraseña maestra exactamente"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}

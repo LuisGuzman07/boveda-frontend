@@ -662,21 +662,15 @@ export default function UnlockVaultModal({
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
                   Ingresa tu código 2FA de 6 dígitos para renovar la autorización del hardware.
                 </p>
-                <div className="input-group">
+                <div className="form-field">
                   <input
                     type="text"
-                    className="input-field"
+                    className="input-control mfa-code-input"
                     placeholder="000000"
                     maxLength={6}
                     value={totpCode}
                     onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
                     disabled={loading}
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '1.2rem',
-                      textAlign: 'center',
-                      letterSpacing: '0.3em',
-                    }}
                     required
                   />
                 </div>
@@ -684,9 +678,9 @@ export default function UnlockVaultModal({
             )}
 
             {/* Contraseña Maestra */}
-            <div className="input-group" style={{ marginBottom: '1.25rem' }}>
+            <div className="form-field" style={{ marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label className="input-label">Contraseña Maestra *</label>
+                <label htmlFor="unlock-master-password">Contraseña Maestra *</label>
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -703,8 +697,9 @@ export default function UnlockVaultModal({
                 </button>
               </div>
               <input
+                id="unlock-master-password"
                 type={showPassword ? 'text' : 'password'}
-                className="input-field"
+                className="input-control"
                 placeholder="Ingresa la contraseña maestra que definiste al crearla"
                 value={masterPassword}
                 onChange={(e) => setMasterPassword(e.target.value)}

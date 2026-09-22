@@ -423,19 +423,23 @@ body {
   gap: 1rem;
 }
 
-.form-field {
+.form-field,
+.input-group {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  width: 100%;
 }
 
-.form-field label {
+.form-field label,
+.input-label {
   font-size: 0.8rem;
   font-weight: 500;
   color: var(--text-muted);
 }
 
-.input-control {
+.input-control,
+.input-field {
   background: rgba(10, 14, 23, 0.7);
   border: 1px solid var(--border-subtle);
   border-radius: 0.4rem;
@@ -444,12 +448,21 @@ body {
   font-size: 0.9rem;
   font-family: var(--font-sans);
   transition: all 0.2s;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.input-control:focus {
+.input-control:focus,
+.input-field:focus {
   outline: none;
   border-color: var(--border-focus);
   box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+.input-control:disabled,
+.input-field:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .password-rules-box {

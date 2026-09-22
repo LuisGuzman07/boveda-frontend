@@ -575,23 +575,18 @@ export default function VaultsPage() {
             )}
 
             <form onSubmit={handleOpenTotpSession}>
-              <div className="input-group" style={{ marginBottom: '1.25rem' }}>
-                <label className="input-label">Código TOTP (Bóveda Authenticator) *</label>
+              <div className="form-field" style={{ marginBottom: '1.25rem' }}>
+                <label htmlFor="vault-totp-code">Código TOTP (Bóveda Authenticator) *</label>
                 <input
+                  id="vault-totp-code"
                   type="text"
-                  className="input-field"
+                  className="input-control mfa-code-input"
                   placeholder="000000"
                   maxLength={6}
                   value={totpCode}
                   onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
                   disabled={totpLoading}
                   autoFocus
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '1.4rem',
-                    textAlign: 'center',
-                    letterSpacing: '0.35em',
-                  }}
                   required
                 />
               </div>

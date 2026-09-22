@@ -74,9 +74,18 @@ export default function EmergencyKitModal({ isOpen, vault, onClose, onRecovered 
           <div className="zk-icon"><Lock size={20} color="#60a5fa" /></div>
           <div className="zk-text">El archivo contiene solo un sobre AES-256-GCM autenticado y metadatos Argon2id. Nunca incluye la clave de bóveda ni archivos originales.</div>
         </div>
-        <div className="input-group" style={{ marginBottom: '1rem' }}>
-          <label className="input-label">Contraseña del kit</label>
-          <input className="input-field" type="password" value={password} onChange={(event) => setPassword(event.target.value)} disabled={busy} minLength={12} />
+        <div className="form-field" style={{ marginBottom: '1rem' }}>
+          <label htmlFor="kit-password">Contraseña del kit</label>
+          <input
+            id="kit-password"
+            className="input-control"
+            type="password"
+            placeholder="••••••••••••"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            disabled={busy}
+            minLength={12}
+          />
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           {vault && <button className="btn btn-primary" onClick={create} disabled={busy || password.length < 12}>Crear y exportar</button>}

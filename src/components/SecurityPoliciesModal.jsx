@@ -244,7 +244,7 @@ export default function SecurityPoliciesModal({ isOpen, onClose, onPolicyUpdated
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                         <input
                           type="number"
-                          className="input-field"
+                          className="input-control"
                           min={meta.min}
                           max={meta.max}
                           value={values[p.codigo] !== undefined ? values[p.codigo] : p.valor}
